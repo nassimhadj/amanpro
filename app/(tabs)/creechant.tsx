@@ -1,4 +1,6 @@
-import React, { useState } from "react";
+import React, { useState,useEffect } from "react";
+import {API_URL} from '../../config/api.config' ;
+import AddressAutocomplete from "./adrresseauto";
 import {
   Modal,
   Image,
@@ -8,13 +10,14 @@ import {
   TouchableOpacity,
   ScrollView,
   TextInput,
-  ActivityIndicator, // Importer l'indicateur de chargement
+  ActivityIndicator,
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
-import { useChantier } from "./chantiercontext"; // Importer le context pour ajouter un chantier
+import { useChantier } from "./chantiercontext";
 
-export default function creerchant({ navigation }) {
-  const { addChantier } = useChantier(); // Récupérer la fonction pour ajouter un chantier
+export default function CreerChantier({ navigation }) {
+  const { addChantier } = useChantier();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [rdv, setRdv] = useState({
     title: "",
@@ -23,6 +26,7 @@ export default function creerchant({ navigation }) {
     phone: "",
     address: "",
     description: "",
+    status:"",
     attachments: [],
     etapes: [],
   });
@@ -64,6 +68,8 @@ export default function creerchant({ navigation }) {
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       quality: 1,
+      allowsEditing: true,
+      aspect: [4, 3],
     });
 
     if (!result.canceled) {
@@ -83,10 +89,11 @@ export default function creerchant({ navigation }) {
       phone: "",
       address: "",
       description: "",
+      status: 'en cours',
       attachments: [],
       etapes: [],
     });
-    navigation.goBack(); // Revenir en arrière quand on annule
+    navigation.goBack();
   };
 
   const validateEmail = (email) => {
@@ -94,84 +101,158 @@ export default function creerchant({ navigation }) {
     return emailRegex.test(email);
   };
 
-  const handleSubmit = () => {
-    // Vérification des champs
+  const validateForm = () => {
     if (!rdv.title || !rdv.email || !rdv.name || !rdv.phone || !rdv.address || !rdv.description) {
       alert("Tous les champs doivent être remplis.");
-      return;
+      return false;
     }
 
     if (!validateEmail(rdv.email)) {
       alert("Email invalide.");
-      return;
+      return false;
     }
 
     if (rdv.phone.length !== 10) {
       alert("Le numéro de téléphone doit comporter 10 chiffres.");
-      return;
+      return false;
     }
 
-    // Ajouter le chantier au contexte
-    addChantier(rdv);
+    return true;
+  };
+ // In creechant.tsx, update your handleSubmit:
+const handleSubmit = async () => {
+  if (!validateForm()) return;
+  console.log('Etapes being sent:', rdv.etapes);
+  setIsSubmitting(true);
+  try {
+    const formData = new FormData();
+    
+    console.log('Creating FormData...');
+    
+    // Add basic fields
+    formData.append('title', rdv.title);
+    formData.append('email', rdv.email);
+    formData.append('name', rdv.name);
+    formData.append('phone', rdv.phone);
+    formData.append('address', rdv.address);
+    formData.append('description', rdv.description);
+    formData.append('status','attente de demarrage') ;
+    console.log('Added basic fields...');
+    
+    formData.append('etapes', JSON.stringify(rdv.etapes));
+    console.log('Added etapes...');
+    
+    // Modified image handling
+    for (let i = 0; i < rdv.attachments.length; i++) {
+      const attachment = rdv.attachments[i];
+      console.log('Processing attachment:', i);
+      
+      // Get the file name from the URI
+      const uriParts = attachment.uri.split('/');
+      const fileName = uriParts[uriParts.length - 1];
 
-    // Réinitialiser les champs
-    setRdv({
-      title: "",
-      email: "",
-      name: "",
-      phone: "",
-      address: "",
-      description: "",
-      attachments: [],
-      etapes: [],
+      formData.append('attachments', {
+        uri: attachment.uri,
+        type: 'image/jpeg',
+        name: fileName,
+      });
+      
+      console.log('Added attachment:', fileName);
+    }
+
+    console.log('FormData created, starting fetch...');
+    
+    // Log the entire FormData
+    for (let pair of formData.entries()) {
+      console.log(pair[0], pair[1]);
+    }
+
+    console.log('Starting fetch request...');
+    
+    const response = await fetch(API_URL+'/rdv', {
+      method: 'POST',
+      body: formData,
+      headers: {
+        'Accept': 'application/json',
+      },
+      // Remove Content-Type header, let it be set automatically
     });
 
+    console.log('Got response:', response.status);
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.log('Error response:', errorText);
+      throw new Error(errorText || 'Failed to create chantier');
+    }
+
+    const result = await response.json();
+    console.log('Success result:', result);
+
+    addChantier(result);
     alert("Chantier créé avec succès!");
-    navigation.goBack(); // Revenir à la page précédente après la création
-  };
+    navigation.goBack();
+
+  } catch (error) {
+    console.error('Submission error:', error);
+    alert('Erreur lors de la création: ' + error.message);
+  } finally {
+    setIsSubmitting(false);
+  }
+};
+  // Add this function to test the connection
+const testConnection = async () => {
+  try {
+    console.log('Before fetch call'); 
+    const response = await fetch(API_URL+'/test');
+    console.log('Connection test:', response.ok);
+  } catch (error) {
+    console.error('Connection error:', error);
+  }
+};
+
+// Call it when component mounts
+useEffect(() => {
+  console.log('useEffect running...'); 
+  testConnection();
+}, []);
+ 
 
   return (
     <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.card}>
-          {/* Champ titre */}
           <TextInput
             style={styles.input}
             placeholder="Titre"
             value={rdv.title}
             onChangeText={(text) => setRdv({ ...rdv, title: text })}
           />
-          {/* Champ email */}
           <TextInput
             style={styles.input}
             placeholder="Email"
             value={rdv.email}
             onChangeText={(text) => setRdv({ ...rdv, email: text })}
           />
-          {/* Champ nom */}
           <TextInput
             style={styles.input}
             placeholder="Nom"
             value={rdv.name}
             onChangeText={(text) => setRdv({ ...rdv, name: text })}
           />
-          {/* Champ téléphone */}
           <TextInput
             style={styles.input}
             placeholder="Téléphone"
             value={rdv.phone}
             onChangeText={(text) => setRdv({ ...rdv, phone: text })}
             keyboardType="numeric"
-            maxLength={10} // Limite à 10 chiffres
+            maxLength={10}
           />
-          {/* Champ adresse */}
-          <TextInput
-            style={styles.input}
-            placeholder="Adresse"
-            value={rdv.address}
-            onChangeText={(text) => setRdv({ ...rdv, address: text })}
-          />
-          {/* Champ description */}
+          <AddressAutocomplete
+  value={rdv.address}
+  onSelectAddress={(address) => setRdv({ ...rdv, address })}
+  
+/>
           <TextInput
             style={[styles.input, { height: 100 }]}
             placeholder="Description"
@@ -200,7 +281,6 @@ export default function creerchant({ navigation }) {
             </View>
           ))}
 
-          {/* Ajout d'une nouvelle étape */}
           <TextInput
             style={styles.input}
             placeholder="Titre de l'étape"
@@ -219,8 +299,7 @@ export default function creerchant({ navigation }) {
           <TouchableOpacity onPress={addEtape} style={styles.button2}>
             <Text style={styles.buttonText2}>Ajouter l'étape</Text>
           </TouchableOpacity>
-
-          {/* Pièces jointes */}
+          <Text style={styles.sectionTitle}>pieces jointes:</Text>
           <TouchableOpacity onPress={addImage} style={styles.button2}>
             <Text style={styles.buttonText2}>Ajouter image</Text>
           </TouchableOpacity>
@@ -237,8 +316,16 @@ export default function creerchant({ navigation }) {
         <TouchableOpacity onPress={handleCancel} style={styles.button}>
           <Text style={styles.buttonText}>Annuler</Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={handleSubmit} style={styles.button}>
-          <Text style={styles.buttonText}>Créer</Text>
+        <TouchableOpacity 
+          onPress={handleSubmit} 
+          style={[styles.button, isSubmitting && styles.buttonDisabled]}
+          disabled={isSubmitting}
+        >
+          {isSubmitting ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text style={styles.buttonText}>Créer</Text>
+          )}
         </TouchableOpacity>
       </View>
     </View>
@@ -311,6 +398,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderRadius: 50,
+    marginBottom:30,
   },
   buttonText2: {
     color: "#000",
@@ -361,4 +449,8 @@ const styles = StyleSheet.create({
     width: 20,
     height: 20,
   },
+  buttonDisabled: {
+    backgroundColor: '#666',
+    opacity: 0.7
+  }
 });

@@ -16,7 +16,7 @@ import { useChantierTer } from "./chantiertercontext";
 import { useChantier } from "./chantiercontext";
 import { API_URL } from "@/config/api.config";
 
-export default function Chantier({ route, navigation }) {
+export default function chantacc({ route, navigation }) {
   const { chantier } = route.params || {};
   if (!chantier) {
     return <Text>Loading...</Text>;
@@ -64,21 +64,19 @@ export default function Chantier({ route, navigation }) {
     });
     
     const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
-      navigation.navigate('chants', { refresh: true });
+      navigation.navigate('chants');
       return true;
     });
   
-    return () => {
-      backHandler.remove();
-      unsubscribe();
-    };
+    return () => backHandler.remove();
+    return unsubscribe;
   }, [navigation, route.params?.updatedChantier]);
 
-  const handleMarkAsCompleted = async (chantierId) => {
+  const handledemmarer = async (chantierId) => {
     try {
       const newEtape = {
-        title: "Travaux terminés",
-        descriptif: `Chantier marqué comme terminé le ${new Date().toLocaleDateString('fr-FR')}`
+        title: "Démarrage du chantier",
+        descriptif: `Chantier démarré le ${new Date().toLocaleDateString('fr-FR')}`
       };
 
       const currentEtapes = updatedChantier.etapes || [];
@@ -90,7 +88,7 @@ export default function Chantier({ route, navigation }) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ 
-          status: 'attente de facturation',
+          status: 'en cours',
           etapes: updatedEtapes
         })
       });
@@ -103,20 +101,20 @@ export default function Chantier({ route, navigation }) {
       addChantierTer(updatedData);
       removeChantier(chantierId);
       
-      alert("Chantier terminé");
+      alert("Chantier demarré");
       navigation.navigate('chants', { refresh: true });
 
     } catch (error) {
       console.error('Error completing chantier:', error);
-      alert("Erreur lors de la finalisation du chantier");
+      alert("Erreur lors du demarrage du chantier");
     }
   };
 
-  const handleSAV = async (chantierId) => {
+  const handelcancel = async (chantierId) => {
     try {
       const newEtape = {
-        title: "Mise en SAV",
-        descriptif: `Chantier mis en service après-vente le ${new Date().toLocaleDateString('fr-FR')}`
+        title: "Annulation du chantier",
+        descriptif: `Chantier annulé le ${new Date().toLocaleDateString('fr-FR')}`
       };
 
       const currentEtapes = updatedChantier.etapes || [];
@@ -128,7 +126,7 @@ export default function Chantier({ route, navigation }) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ 
-          status: 'SAV',
+          status: 'annulé',
           etapes: updatedEtapes
         })
       });
@@ -138,15 +136,13 @@ export default function Chantier({ route, navigation }) {
       }
 
       const updatedData = await response.json();
-      addChantierTer(updatedData);
+      setUpdatedChantier(updatedData);
       removeChantier(chantierId);
-      
-      alert("Chantier en SAV");
+      alert("Chantier annulé");
       navigation.navigate('chants', { refresh: true });
-
     } catch (error) {
-      console.error('Error completing chantier:', error);
-      alert("Erreur lors de la mise en SAV du chantier");
+      console.error('Error cancelling chantier:', error);
+      alert("Erreur lors de l'annulation du chantier");
     }
   };
 
@@ -166,6 +162,7 @@ export default function Chantier({ route, navigation }) {
           <Text style={styles.text}>{updatedChantier.address}</Text>
           <Text style={styles.sectionTitle}>Descriptif:</Text>
           <Text style={styles.description}>{updatedChantier.description}</Text>
+
           <Text style={styles.title}>les etapes :</Text>
           {/* Render Etapes */}
           {updatedChantier.etapes && updatedChantier.etapes.length > 0 ? (
@@ -177,7 +174,8 @@ export default function Chantier({ route, navigation }) {
               </View>
             ))
           ) : (
-            <Text style={styles.sectionTitle} >pas d'etapes disponibles</Text>  // Fallback text if no etapes exist
+            <Text style={styles.sectionTitle
+            } >pas d'etapes disponibles</Text>  // Fallback text if no etapes exist
           )}
 
           <Text style={styles.sectionTitle}>Pièces jointes:</Text>
@@ -206,24 +204,15 @@ export default function Chantier({ route, navigation }) {
       <View style={styles.vbutton}>
         <TouchableOpacity
           style={styles.button2}
-          onPress={() => navigation.navigate("modchant", { 
-            chantier: updatedChantier,
-            chantierId: updatedChantier._id
-          })}
+          onPress={() => handelcancel(updatedChantier.id)}
         >
-          <Text style={styles.buttonText2}>modifier</Text>
+          <Text style={styles.buttonText2}>annuler</Text>
         </TouchableOpacity>
         <TouchableOpacity 
           style={styles.button}
-          onPress={() => handleMarkAsCompleted(updatedChantier._id)}
+          onPress={() => handledemmarer(updatedChantier.id)}
         >
-          <Text style={styles.buttonText}>marquer terminé</Text>
-        </TouchableOpacity>
-        <TouchableOpacity 
-          style={styles.button2}
-          onPress={() => handleSAV(updatedChantier._id)}
-        >
-          <Text style={styles.buttonText2}>mettre SAV</Text>
+          <Text style={styles.buttonText}>demarrer</Text>
         </TouchableOpacity>
       </View>
 
@@ -299,9 +288,6 @@ const styles = StyleSheet.create({
     marginTop: 10,
     justifyContent: "space-between",
   },
-  attachmentContainer: {
-    position: "relative",
-  },
   attachmentImage: {
     width: 80,
     height: 80,
@@ -371,6 +357,9 @@ const styles = StyleSheet.create({
   },
   etape: {
     marginBottom: 10,
+  },
+  attachmentContainer: {
+    position: "relative",
   },
   etapeTitle: {
     fontSize: 16,

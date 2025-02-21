@@ -1,49 +1,39 @@
 import React, { useState, useEffect } from "react";
 import { BackHandler } from 'react-native';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  Image, 
-  ScrollView, 
-  Modal, 
-  TouchableOpacity, 
-  RefreshControl, 
-  Alert,
-  ActivityIndicator 
-} from "react-native";
+import { View, Text, StyleSheet, Image, ScrollView, Modal, TouchableOpacity, RefreshControl , Alert } from "react-native";
 import { useChantierTer } from "./chantiertercontext";
 import { useChantier } from "./chantiercontext";
 import { API_URL } from "@/config/api.config";
 
-export default function Chantier({ route, navigation }) {
-  const { chantier } = route.params || {};
+export default function chantfac({ route, navigation }) {
+  const { chantier } = route.params || {}; // Safe destructuring
   if (!chantier) {
-    return <Text>Loading...</Text>;
+    return <Text>Loading...</Text>; // Display a loading state if no chantier is available
   }
 
   const [selectedImage, setSelectedImage] = useState(null);
-  const [isImageLoading, setIsImageLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  const [updatedChantier, setUpdatedChantier] = useState(chantier);
+  const [updatedChantier, setUpdatedChantier] = useState(chantier); // State to store updated chantier
   const { addChantierTer } = useChantierTer();
   const { chantiers, removeChantier } = useChantier();
 
+  // Refresh handler
   const onRefresh = async () => {
     setRefreshing(true);
     try {
+      // Log the URL we're trying to fetch
       const fetchUrl = `${API_URL}/rdv/${updatedChantier._id}`;
       console.log('Fetching from URL:', fetchUrl);
-
+  
       const response = await fetch(fetchUrl);
       console.log('Response status:', response.status);
-
+  
       if (!response.ok) {
         const errorText = await response.text();
         console.log('Error response:', errorText);
         throw new Error('Failed to refresh data');
       }
-
+  
       const updatedData = await response.json();
       console.log('Received data:', updatedData);
       
@@ -56,29 +46,28 @@ export default function Chantier({ route, navigation }) {
     }
   };
 
+  // Listen for when the screen comes back into focus (after modification)
   useEffect(() => {
     const unsubscribe = navigation.addListener('focus', () => {
       if (route.params?.updatedChantier) {
-        setUpdatedChantier(route.params.updatedChantier);
+        setUpdatedChantier(route.params.updatedChantier); // Update chantier data with modified values
       }
     });
     
     const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
-      navigation.navigate('chants', { refresh: true });
+        navigation.navigate('chants', { refresh: true });
       return true;
     });
   
-    return () => {
-      backHandler.remove();
-      unsubscribe();
-    };
+    return () => backHandler.remove();
+    return unsubscribe;
   }, [navigation, route.params?.updatedChantier]);
 
-  const handleMarkAsCompleted = async (chantierId) => {
+  const handlefacturer = async (chantierId) => {
     try {
       const newEtape = {
-        title: "Travaux terminés",
-        descriptif: `Chantier marqué comme terminé le ${new Date().toLocaleDateString('fr-FR')}`
+        title: "Facturation du chantier",
+        descriptif: `Chantier facturé le ${new Date().toLocaleDateString('fr-FR')}`
       };
 
       const currentEtapes = updatedChantier.etapes || [];
@@ -90,33 +79,32 @@ export default function Chantier({ route, navigation }) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ 
-          status: 'attente de facturation',
+          status: 'attente de payement',
           etapes: updatedEtapes
         })
       });
-
+  
       if (!response.ok) {
         throw new Error('Failed to update status');
       }
-
+  
       const updatedData = await response.json();
       addChantierTer(updatedData);
       removeChantier(chantierId);
-      
-      alert("Chantier terminé");
+      alert("Chantier facturé");
       navigation.navigate('chants', { refresh: true });
-
+  
     } catch (error) {
       console.error('Error completing chantier:', error);
-      alert("Erreur lors de la finalisation du chantier");
+      alert("Erreur lors du facturation du chantier");
     }
   };
-
-  const handleSAV = async (chantierId) => {
+  
+  const handelcancel = async (chantierId) => {
     try {
       const newEtape = {
-        title: "Mise en SAV",
-        descriptif: `Chantier mis en service après-vente le ${new Date().toLocaleDateString('fr-FR')}`
+        title: "Annulation du chantier",
+        descriptif: `Chantier annulé le ${new Date().toLocaleDateString('fr-FR')}`
       };
 
       const currentEtapes = updatedChantier.etapes || [];
@@ -128,25 +116,23 @@ export default function Chantier({ route, navigation }) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ 
-          status: 'SAV',
+          status: 'annulé',
           etapes: updatedEtapes
         })
       });
-
+  
       if (!response.ok) {
         throw new Error('Failed to update status');
       }
-
+  
       const updatedData = await response.json();
-      addChantierTer(updatedData);
+      setUpdatedChantier(updatedData);
       removeChantier(chantierId);
-      
-      alert("Chantier en SAV");
+      alert("Chantier annulé");
       navigation.navigate('chants', { refresh: true });
-
     } catch (error) {
-      console.error('Error completing chantier:', error);
-      alert("Erreur lors de la mise en SAV du chantier");
+      console.error('Error cancelling chantier:', error);
+      alert("Erreur lors de l'annulation du chantier");
     }
   };
 
@@ -188,15 +174,16 @@ export default function Chantier({ route, navigation }) {
                 : `${API_URL}/rdv/uploads/${attachment.filename}`;
 
               return (
-                <View key={index} style={styles.attachmentContainer}>
-                  <TouchableOpacity onPress={() => setSelectedImage(imageUri)}>
-                    <Image 
-                      source={{ uri: imageUri }}
-                      style={styles.attachmentImage}
-                      onError={(e) => console.log('Image error:', e.nativeEvent.error)}
-                    />
-                  </TouchableOpacity>
-                </View>
+                <TouchableOpacity
+                  key={index}
+                  onPress={() => setSelectedImage(imageUri)}
+                >
+                  <Image 
+                    source={{ uri: imageUri }} 
+                    style={styles.attachmentImage}
+                    onError={(e) => console.log('Image loading error:', e.nativeEvent.error)}
+                  />
+                </TouchableOpacity>
               );
             })}
           </View>
@@ -206,27 +193,16 @@ export default function Chantier({ route, navigation }) {
       <View style={styles.vbutton}>
         <TouchableOpacity
           style={styles.button2}
-          onPress={() => navigation.navigate("modchant", { 
-            chantier: updatedChantier,
-            chantierId: updatedChantier._id
-          })}
+          onPress={() => handelcancel(updatedChantier.id)}
         >
-          <Text style={styles.buttonText2}>modifier</Text>
+          <Text style={styles.buttonText2}>Annuler</Text>
         </TouchableOpacity>
-        <TouchableOpacity 
-          style={styles.button}
-          onPress={() => handleMarkAsCompleted(updatedChantier._id)}
-        >
-          <Text style={styles.buttonText}>marquer terminé</Text>
-        </TouchableOpacity>
-        <TouchableOpacity 
-          style={styles.button2}
-          onPress={() => handleSAV(updatedChantier._id)}
-        >
-          <Text style={styles.buttonText2}>mettre SAV</Text>
+        <TouchableOpacity style={styles.button} onPress={() => handlefacturer(updatedChantier.id)}>
+          <Text style={styles.buttonText}>Facturer</Text>
         </TouchableOpacity>
       </View>
 
+      {/* Modal pour afficher l'image en plein écran */}
       {selectedImage && (
         <Modal
           transparent={true}
@@ -241,17 +217,7 @@ export default function Chantier({ route, navigation }) {
             >
               <Text style={styles.closeText}>Close</Text>
             </TouchableOpacity>
-
-            {isImageLoading && (
-              <ActivityIndicator size="large" color="#fff" style={styles.loader} />
-            )}
-
-            <Image 
-              source={{ uri: selectedImage }}
-              style={styles.fullImage}
-              onLoadStart={() => setIsImageLoading(true)}
-              onLoadEnd={() => setIsImageLoading(false)}
-            />
+            <Image source={{ uri: selectedImage }} style={styles.fullImage} />
           </View>
         </Modal>
       )}
@@ -310,7 +276,7 @@ const styles = StyleSheet.create({
   },
   modalContainer: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.8)",
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
     justifyContent: "center",
     alignItems: "center",
   },
@@ -318,7 +284,6 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: 40,
     right: 20,
-    zIndex: 2,
   },
   closeText: {
     color: "#fff",
@@ -329,10 +294,6 @@ const styles = StyleSheet.create({
     width: "90%",
     height: "70%",
     resizeMode: "contain",
-  },
-  loader: {
-    position: "absolute",
-    zIndex: 1,
   },
   vbutton: {
     flexDirection: "row",
@@ -379,5 +340,5 @@ const styles = StyleSheet.create({
   etapeDescription: {
     fontSize: 14,
     color: "#555",
-  }
+  },
 });

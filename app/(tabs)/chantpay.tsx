@@ -1,31 +1,21 @@
 import React, { useState, useEffect } from "react";
 import { BackHandler } from 'react-native';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  Image, 
-  ScrollView, 
-  Modal, 
-  TouchableOpacity, 
-  RefreshControl, 
-  Alert,
-  ActivityIndicator 
-} from "react-native";
+import { View, Text, StyleSheet, Image, ScrollView, Modal, TouchableOpacity, RefreshControl, Alert, TextInput } from "react-native";
 import { useChantierTer } from "./chantiertercontext";
 import { useChantier } from "./chantiercontext";
 import { API_URL } from "@/config/api.config";
 
-export default function Chantier({ route, navigation }) {
+export default function chantpay({ route, navigation }) {
   const { chantier } = route.params || {};
   if (!chantier) {
     return <Text>Loading...</Text>;
   }
 
   const [selectedImage, setSelectedImage] = useState(null);
-  const [isImageLoading, setIsImageLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [updatedChantier, setUpdatedChantier] = useState(chantier);
+  const [isPaymentModalVisible, setIsPaymentModalVisible] = useState(false);
+  const [paymentAmount, setPaymentAmount] = useState('');
   const { addChantierTer } = useChantierTer();
   const { chantiers, removeChantier } = useChantier();
 
@@ -64,7 +54,7 @@ export default function Chantier({ route, navigation }) {
     });
     
     const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
-      navigation.navigate('chants', { refresh: true });
+      navigation.navigate('chants');
       return true;
     });
   
@@ -74,15 +64,24 @@ export default function Chantier({ route, navigation }) {
     };
   }, [navigation, route.params?.updatedChantier]);
 
-  const handleMarkAsCompleted = async (chantierId) => {
+  const handlepayement = () => {
+    setPaymentAmount('');
+    setIsPaymentModalVisible(true);
+  };
+
+  const handlePaymentSubmit = async (chantierId) => {
+    if (!paymentAmount || isNaN(paymentAmount)) {
+      Alert.alert('Erreur', 'Veuillez entrer un montant valide');
+      return;
+    }
+
     try {
       const newEtape = {
-        title: "Travaux terminés",
-        descriptif: `Chantier marqué comme terminé le ${new Date().toLocaleDateString('fr-FR')}`
+        title: "Archivage du chantier",
+        descriptif: `Chantier archivé le ${new Date().toLocaleDateString('fr-FR')} - Montant payé: ${paymentAmount}€`
       };
 
-      const currentEtapes = updatedChantier.etapes || [];
-      const updatedEtapes = [...currentEtapes, newEtape];
+      const updatedEtapes = [...updatedChantier.etapes || [], newEtape];
 
       const response = await fetch(`${API_URL}/rdv/${updatedChantier._id}/status`, {
         method: 'PUT',
@@ -90,7 +89,7 @@ export default function Chantier({ route, navigation }) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ 
-          status: 'attente de facturation',
+          status: 'fini',
           etapes: updatedEtapes
         })
       });
@@ -102,25 +101,24 @@ export default function Chantier({ route, navigation }) {
       const updatedData = await response.json();
       addChantierTer(updatedData);
       removeChantier(chantierId);
-      
-      alert("Chantier terminé");
+      setIsPaymentModalVisible(false);
+      alert("Chantier archivé");
       navigation.navigate('chants', { refresh: true });
 
     } catch (error) {
-      console.error('Error completing chantier:', error);
-      alert("Erreur lors de la finalisation du chantier");
+      console.error('Error archiving chantier:', error);
+      alert("Erreur lors de l'archivage du chantier");
     }
   };
 
-  const handleSAV = async (chantierId) => {
+  const handelcancel = async (chantierId) => {
     try {
       const newEtape = {
-        title: "Mise en SAV",
-        descriptif: `Chantier mis en service après-vente le ${new Date().toLocaleDateString('fr-FR')}`
+        title: "Annulation du chantier",
+        descriptif: `Chantier annulé le ${new Date().toLocaleDateString('fr-FR')}`
       };
 
-      const currentEtapes = updatedChantier.etapes || [];
-      const updatedEtapes = [...currentEtapes, newEtape];
+      const updatedEtapes = [...updatedChantier.etapes || [], newEtape];
 
       const response = await fetch(`${API_URL}/rdv/${updatedChantier._id}/status`, {
         method: 'PUT',
@@ -128,7 +126,7 @@ export default function Chantier({ route, navigation }) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ 
-          status: 'SAV',
+          status: 'annulé',
           etapes: updatedEtapes
         })
       });
@@ -138,15 +136,13 @@ export default function Chantier({ route, navigation }) {
       }
 
       const updatedData = await response.json();
-      addChantierTer(updatedData);
+      setUpdatedChantier(updatedData);
       removeChantier(chantierId);
-      
-      alert("Chantier en SAV");
-      navigation.navigate('chants', { refresh: true });
-
+      alert("Chantier annulé");
+      navigation.navigate('chantmsg', { refresh: true });
     } catch (error) {
-      console.error('Error completing chantier:', error);
-      alert("Erreur lors de la mise en SAV du chantier");
+      console.error('Error cancelling chantier:', error);
+      alert("Erreur lors de l'annulation du chantier");
     }
   };
 
@@ -206,27 +202,54 @@ export default function Chantier({ route, navigation }) {
       <View style={styles.vbutton}>
         <TouchableOpacity
           style={styles.button2}
-          onPress={() => navigation.navigate("modchant", { 
-            chantier: updatedChantier,
-            chantierId: updatedChantier._id
-          })}
+          onPress={() => handelcancel(updatedChantier.id)}
         >
-          <Text style={styles.buttonText2}>modifier</Text>
+          <Text style={styles.buttonText2}>annuler</Text>
         </TouchableOpacity>
         <TouchableOpacity 
           style={styles.button}
-          onPress={() => handleMarkAsCompleted(updatedChantier._id)}
+          onPress={handlepayement}
         >
-          <Text style={styles.buttonText}>marquer terminé</Text>
-        </TouchableOpacity>
-        <TouchableOpacity 
-          style={styles.button2}
-          onPress={() => handleSAV(updatedChantier._id)}
-        >
-          <Text style={styles.buttonText2}>mettre SAV</Text>
+          <Text style={styles.buttonText}>archiver</Text>
         </TouchableOpacity>
       </View>
 
+      {/* Payment Modal */}
+      <Modal
+        visible={isPaymentModalVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setIsPaymentModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Entrer le montant du paiement</Text>
+            <TextInput
+              style={styles.paymentInput}
+              placeholder="Montant en €"
+              keyboardType="numeric"
+              value={paymentAmount}
+              onChangeText={setPaymentAmount}
+            />
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.cancelButton]}
+                onPress={() => setIsPaymentModalVisible(false)}
+              >
+                <Text style={styles.cancelButtonText}>Annuler</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.confirmButton]}
+                onPress={() => handlePaymentSubmit(updatedChantier.id)}
+              >
+                <Text style={styles.confirmButtonText}>Confirmer</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Image Modal */}
       {selectedImage && (
         <Modal
           transparent={true}
@@ -241,17 +264,7 @@ export default function Chantier({ route, navigation }) {
             >
               <Text style={styles.closeText}>Close</Text>
             </TouchableOpacity>
-
-            {isImageLoading && (
-              <ActivityIndicator size="large" color="#fff" style={styles.loader} />
-            )}
-
-            <Image 
-              source={{ uri: selectedImage }}
-              style={styles.fullImage}
-              onLoadStart={() => setIsImageLoading(true)}
-              onLoadEnd={() => setIsImageLoading(false)}
-            />
+            <Image source={{ uri: selectedImage }} style={styles.fullImage} />
           </View>
         </Modal>
       )}
@@ -310,7 +323,7 @@ const styles = StyleSheet.create({
   },
   modalContainer: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.8)",
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
     justifyContent: "center",
     alignItems: "center",
   },
@@ -318,7 +331,6 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: 40,
     right: 20,
-    zIndex: 2,
   },
   closeText: {
     color: "#fff",
@@ -329,10 +341,6 @@ const styles = StyleSheet.create({
     width: "90%",
     height: "70%",
     resizeMode: "contain",
-  },
-  loader: {
-    position: "absolute",
-    zIndex: 1,
   },
   vbutton: {
     flexDirection: "row",
@@ -379,5 +387,62 @@ const styles = StyleSheet.create({
   etapeDescription: {
     fontSize: 14,
     color: "#555",
-  }
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    backgroundColor: 'white',
+    borderRadius: 15,
+    padding: 20,
+    width: '80%',
+    alignItems: 'center',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  paymentInput: {
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 8,
+    padding: 10,
+    width: '100%',
+    marginBottom: 20,
+    fontSize: 16,
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+  },
+  modalButton: {
+    borderRadius: 25,
+    padding: 10,
+    width: '45%',
+    alignItems: 'center',
+  },
+  cancelButton: {
+    backgroundColor: '#fff',
+    borderWidth: 2,
+    borderColor: '#000',
+  },
+  confirmButton: {
+    backgroundColor: '#000',
+  },
+  cancelButtonText: {
+    color: '#000',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  confirmButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
 });

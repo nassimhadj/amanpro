@@ -11,7 +11,20 @@ import Chantier from './chantier';
 import chantierster from './chantierster';
 import creerchant from './creechant';
 import modchant from './modchant';
+import chantmsg from './chantmsg' ;
+import chantprop from './chantprop' ;
 import chantierter from './chantierter';
+import chantannul from './chantannul';
+import chantsannul from './chantsannul' ;
+import chants from './chants' ;
+import chantsacc from './chantsacc';
+import chantssav from './chantssav';
+import chantsfac from './chantsfac';
+import chantspay from './chantspay';
+import chantacc from './chantacc';
+import chantsav from './chantsav';
+import chantfac from './chantfac';
+import chantpay from './chantpay';
 import { Image, StyleSheet } from 'react-native';
 
 const Drawer = createDrawerNavigator();
@@ -34,31 +47,96 @@ const RDVStack = () => (
 
   </Stack.Navigator>
 );
-
-const chantierterstack = () => (
+const chantmsgstack = () => (
   <Stack.Navigator>
+    <Stack.Screen
+      name="chantmsg"
+      component={chantmsg}
+      options={{ headerShown: false ,
+         unmountOnBlur: true}}
+    />
+    <Stack.Screen
+      name="chantprop"
+      component={chantprop}
+      options={{ headerShown:false }}
+    />
+  </Stack.Navigator>
+);
+
+
+const creerchantstack = ()=>(
+  <Stack.Navigator>
+
+     <Stack.Screen
+    name="chants"
+    component={chants}
+    options={{ headerShown: false , unmountOnBlur: true }}
+  />
+  <Stack.Screen
+    name="chantsacc"
+    component={chantsacc}
+    options={{ headerShown: false , unmountOnBlur: true }}
+  />
+  <Stack.Screen
+    name="chantssav"
+    component={chantssav}
+    options={{ headerShown: false , unmountOnBlur: true }}
+  /><Stack.Screen
+  name="chantsfac"
+  component={chantsfac}
+  options={{ headerShown: false , unmountOnBlur: true }}
+/>
+<Stack.Screen
+    name="chantspay"
+    component={chantspay}
+    options={{ headerShown: false , unmountOnBlur: true }}
+  />
+  <Stack.Screen
+    name="chantacc"
+    component={chantacc}
+    options={{ headerShown: false , unmountOnBlur: true }}
+  />
+  <Stack.Screen
+    name="chantsav"
+    component={chantsav}
+    options={{ headerShown: false , unmountOnBlur: true }}
+  />
+  <Stack.Screen
+    name="chantfac"
+    component={chantfac}
+    options={{ headerShown: false , unmountOnBlur: true }}
+  />
+  <Stack.Screen
+    name="chantpay"
+    component={chantpay}
+    options={{ headerShown: false , unmountOnBlur: true }}
+  />
+  <Stack.Screen
+    name="chantiers"
+    component={chantiers}
+    options={{ headerShown: false , unmountOnBlur: true }}
+  />
     <Stack.Screen
       name="chantierster"
       component={chantierster}
       options={{ headerShown: false }}
+    />
+     <Stack.Screen
+      name="chantsannul"
+      component={chantsannul}
+      options={{ headerShown: false ,
+         unmountOnBlur: true}}
+    />
+    <Stack.Screen
+      name="chantannul"
+      component={chantannul}
+      options={{ headerShown:false }}
     />
     <Stack.Screen
       name="chantierter"
       component={chantierter}
       options={{ headerShown:false}}
     />
-   
-
-  </Stack.Navigator>
-);
-
-const creerchantstack = ()=>(
-  <Stack.Navigator>
-  <Stack.Screen
-    name="chantiers"
-    component={chantiers}
-    options={{ headerShown: false }}
-  />
   <Stack.Screen
     name="creerchantier"
     component={creerchant}
@@ -109,6 +187,20 @@ const DrawerNavigator = () => {
           ),
         }}
       />
+        <Drawer.Screen
+        name="chantmsg"
+        component={chantmsgstack}
+        options={{
+          drawerLabel: 'propositions',
+          drawerIcon: () => (
+            <Image
+              source={require('../../assets/images/mail-in.png')}
+              style={styles.icon}
+            />
+            
+          ),
+        }}
+      />
       <Drawer.Screen
         name="chantiers"
         component={creerchantstack}
@@ -122,19 +214,8 @@ const DrawerNavigator = () => {
           ),
         }}
       />
-      <Drawer.Screen
-        name="chantierter"
-        component={chantierterstack}
-        options={{
-          drawerLabel: 'Chantiers faits',
-          drawerIcon: () => (
-            <Image
-              source={require('../../assets/images/Group.png')}
-              style={styles.icon}
-            />
-          ),
-        }}
-      />
+      
+      
     </Drawer.Navigator>
     </ChantierProvider>
     </RdvProvider>

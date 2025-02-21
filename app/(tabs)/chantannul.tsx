@@ -16,7 +16,7 @@ import { useChantierTer } from "./chantiertercontext";
 import { useChantier } from "./chantiercontext";
 import { API_URL } from "@/config/api.config";
 
-export default function Chantier({ route, navigation }) {
+export default function Chantannul({ route, navigation }) {
   const { chantier } = route.params || {};
   if (!chantier) {
     return <Text>Loading...</Text>;
@@ -74,82 +74,6 @@ export default function Chantier({ route, navigation }) {
     };
   }, [navigation, route.params?.updatedChantier]);
 
-  const handleMarkAsCompleted = async (chantierId) => {
-    try {
-      const newEtape = {
-        title: "Travaux terminés",
-        descriptif: `Chantier marqué comme terminé le ${new Date().toLocaleDateString('fr-FR')}`
-      };
-
-      const currentEtapes = updatedChantier.etapes || [];
-      const updatedEtapes = [...currentEtapes, newEtape];
-
-      const response = await fetch(`${API_URL}/rdv/${updatedChantier._id}/status`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ 
-          status: 'attente de facturation',
-          etapes: updatedEtapes
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to update status');
-      }
-
-      const updatedData = await response.json();
-      addChantierTer(updatedData);
-      removeChantier(chantierId);
-      
-      alert("Chantier terminé");
-      navigation.navigate('chants', { refresh: true });
-
-    } catch (error) {
-      console.error('Error completing chantier:', error);
-      alert("Erreur lors de la finalisation du chantier");
-    }
-  };
-
-  const handleSAV = async (chantierId) => {
-    try {
-      const newEtape = {
-        title: "Mise en SAV",
-        descriptif: `Chantier mis en service après-vente le ${new Date().toLocaleDateString('fr-FR')}`
-      };
-
-      const currentEtapes = updatedChantier.etapes || [];
-      const updatedEtapes = [...currentEtapes, newEtape];
-
-      const response = await fetch(`${API_URL}/rdv/${updatedChantier._id}/status`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ 
-          status: 'SAV',
-          etapes: updatedEtapes
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to update status');
-      }
-
-      const updatedData = await response.json();
-      addChantierTer(updatedData);
-      removeChantier(chantierId);
-      
-      alert("Chantier en SAV");
-      navigation.navigate('chants', { refresh: true });
-
-    } catch (error) {
-      console.error('Error completing chantier:', error);
-      alert("Erreur lors de la mise en SAV du chantier");
-    }
-  };
-
   return (
     <View style={styles.container}>
       <ScrollView
@@ -166,6 +90,7 @@ export default function Chantier({ route, navigation }) {
           <Text style={styles.text}>{updatedChantier.address}</Text>
           <Text style={styles.sectionTitle}>Descriptif:</Text>
           <Text style={styles.description}>{updatedChantier.description}</Text>
+
           <Text style={styles.title}>les etapes :</Text>
           {/* Render Etapes */}
           {updatedChantier.etapes && updatedChantier.etapes.length > 0 ? (
@@ -202,30 +127,6 @@ export default function Chantier({ route, navigation }) {
           </View>
         </View>
       </ScrollView>
-
-      <View style={styles.vbutton}>
-        <TouchableOpacity
-          style={styles.button2}
-          onPress={() => navigation.navigate("modchant", { 
-            chantier: updatedChantier,
-            chantierId: updatedChantier._id
-          })}
-        >
-          <Text style={styles.buttonText2}>modifier</Text>
-        </TouchableOpacity>
-        <TouchableOpacity 
-          style={styles.button}
-          onPress={() => handleMarkAsCompleted(updatedChantier._id)}
-        >
-          <Text style={styles.buttonText}>marquer terminé</Text>
-        </TouchableOpacity>
-        <TouchableOpacity 
-          style={styles.button2}
-          onPress={() => handleSAV(updatedChantier._id)}
-        >
-          <Text style={styles.buttonText2}>mettre SAV</Text>
-        </TouchableOpacity>
-      </View>
 
       {selectedImage && (
         <Modal
@@ -333,41 +234,6 @@ const styles = StyleSheet.create({
   loader: {
     position: "absolute",
     zIndex: 1,
-  },
-  vbutton: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    paddingHorizontal: 20,
-    paddingBottom: 20,
-    backgroundColor: "#fff",
-  },
-  button: {
-    backgroundColor: "#000000",
-    height: 40,
-    width: 140,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: 50,
-  },
-  buttonText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "bold",
-  },
-  button2: {
-    backgroundColor: "#FFFFFF",
-    borderColor: "#000",
-    borderWidth: 2,
-    height: 40,
-    width: 125,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: 50,
-  },
-  buttonText2: {
-    color: "#000",
-    fontSize: 16,
-    fontWeight: "bold",
   },
   etape: {
     marginBottom: 10,

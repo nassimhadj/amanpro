@@ -1,54 +1,84 @@
-import React, { useState, useContext } from "react";
+import React, { useEffect, useState } from "react";
 import { Platform, ScrollView, RefreshControl } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Image, View, Text, StyleSheet, TouchableOpacity } from "react-native";
-import { RdvContext } from "./rdvcontext";
+import { API_URL } from "@/config/api.config";
+
+interface Appointment {
+  id: string;
+  date: string;
+  time: string;
+  address: string;
+  name: string;
+  phone: string;
+}
 
 export default function RDVScreen() {
   const navigation = useNavigation();
-
-  const handleButtonPress = () => {
-    navigation.navigate("ajoutrdv");
-  };
-
-  const { rdvs, setRdvs } = useContext(RdvContext);
+  const [rdvs, setRdvs] = useState<Appointment[]>([]);
   const [refreshing, setRefreshing] = useState(false);
 
-  // Sort rdvs by datetime, closest to current time
-  const sortedRdvs = [...rdvs].sort((a, b) => {
-    const now = new Date();
-    if (a.datetime < now && b.datetime < now) {
-      return a.datetime - b.datetime; // Both past, sort by datetime
+  const fetchRdvs = async () => {
+    try {
+      const response = await fetch(`${API_URL}/appointments`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch appointments');
+      }
+      const data = await response.json();
+      setRdvs(data);
+    } catch (error) {
+      console.error('Failed to load appointments', error);
     }
-    if (a.datetime >= now && b.datetime >= now) {
-      return a.datetime - b.datetime; // Both future, sort by datetime
-    }
-    // One is in the future and one is in the past, show future ones first
-    return a.datetime >= now ? -1 : 1;
-  });
-
-  // Cleanup RDVs by removing those that have passed
-  const cleanupRDVs = () => {
-    const now = new Date();
-    const validRdvs = rdvs.filter(rdv => new Date(rdv.datetime) > now); // Filter out RDVs in the past
-    setRdvs(validRdvs); // Update the RDVs in the context
   };
 
-  // Trigger cleanup on pull to refresh
-  const onRefresh = () => {
+  const onRefresh = async () => {
     setRefreshing(true);
-    cleanupRDVs();
-    setRefreshing(false);
+    try {
+      await fetchRdvs();
+    } catch (error) {
+      console.error('Error refreshing:', error);
+    } finally {
+      setRefreshing(false);
+    }
   };
+
+  // Clean up past appointments
+  const cleanupRDVs = async () => {
+    try {
+      const response = await fetch(`${API_URL}/appointments/cleanup`, {
+        method: 'DELETE'
+      });
+      if (response.ok) {
+        fetchRdvs(); // Refresh the list after cleanup
+      }
+    } catch (error) {
+      console.error('Error cleaning up appointments:', error);
+    }
+  };
+
+  const handleButtonPress = () => {
+    // Implement navigation to add appointment screen
+    navigation.navigate('ajoutrdv');
+  };
+
+  useEffect(() => {
+    fetchRdvs();
+
+    const unsubscribe = navigation.addListener('focus', () => {
+      fetchRdvs();
+    });
+
+    return unsubscribe;
+  }, [navigation]);
 
   return (
     <ScrollView
-      contentContainerStyle={styles.container} // Fix: use contentContainerStyle instead of style for child layout
+      contentContainerStyle={styles.container}
       refreshControl={
         <RefreshControl
           refreshing={refreshing}
           onRefresh={onRefresh}
-          colors={['#000000']} // Customize refresh control colors if needed
+          colors={['#000000']}
         />
       }
     >
@@ -58,7 +88,7 @@ export default function RDVScreen() {
         </TouchableOpacity>
       </View>
 
-      {sortedRdvs.map((rdv) => (
+      {rdvs.map((rdv) => (
         <View key={rdv.id} style={styles.column}>
           <Text style={styles.grdtext}>
             {rdv.date} {rdv.time}
@@ -93,7 +123,7 @@ export default function RDVScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    alignItems: 'flex-start',  // Fix: Move alignItems here
+    alignItems: 'flex-start',
     backgroundColor: "#f5f5f5",
     paddingHorizontal: 20,
   },

@@ -1,61 +1,134 @@
-import React, { useState } from "react";
-import { Image, View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput } from "react-native";
-import { useChantierTer } from './chantiertercontext'; // Import the context
+import React, { useState, useEffect } from "react";
+import {
+  Image,
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+  TextInput,
+} from "react-native";
+import { useChantier } from "./chantiercontext";
+import { API_URL } from '../../config/api.config';
 
-export default function Chantierster({navigation}) {
-  const [searchQuery, setSearchQuery] = useState(""); // State to track search input
-  const { chantierTers } = useChantierTer(); // Access the completed chantier data
+export default function chantierster({ navigation }) {
+  const [searchQuery, setSearchQuery] = useState("");
+  const { chantiers, setChantiers } = useChantier();
+  const [loading, setLoading] = useState(true);
 
-  // Filter the completed chantiers based on the search query
-  const filteredChantiers = chantierTers.filter((chantier) => {
-    const query = searchQuery.toLowerCase();
+ 
+
+    
+  useEffect(() => {
+    // Clear existing data first
+    setChantiers([]);
+    
+    const fetchendedChantiers = async () => {
+      try {
+        console.log('Fetching data...');
+        const response = await fetch(`${API_URL}/rdv`);
+        console.log('Response status:', response.status);
+        
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+        
+        const data = await response.json();
+        console.log('All chantiers:', data);
+        
+        const endedChantiers = data.filter(rdv => rdv.status === 'fini');
+        console.log('Filtered en cours chantiers:', endedChantiers);
+        
+        setChantiers(endedChantiers);
+      } catch (error) {
+        console.error("Error fetching chantiers:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+  
+    // Add navigation focus listener
+    const unsubscribe = navigation.addListener('focus', () => {
+      setLoading(true);
+      fetchendedChantiers();
+    });
+  
+    // Initial fetch
+    fetchendedChantiers();
+  
+    // Cleanup listener
+    return unsubscribe;
+  }, [navigation]);
+
+  // Add this logging to see when chantiers changes
+  useEffect(() => {
+    console.log('Current chantiers in state:', chantiers);
+  }, [chantiers]);
+
+  const filteredChantiers = chantiers.filter(chantier => 
+    chantier.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    chantier.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    chantier.address.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  if (loading) {
     return (
-      (chantier.title && chantier.title.toLowerCase().includes(query)) ||
-      (chantier.name && chantier.name.toLowerCase().includes(query)) ||
-      (chantier.email && chantier.email.toLowerCase().includes(query)) ||
-      (chantier.phone && chantier.phone.includes(query)) ||
-      (chantier.address && chantier.address.toLowerCase().includes(query))
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <Text>Chargement des chantiers...</Text>
+      </View>
     );
-  });
-  const goToChantierTer = (chantier) => {
-    console.log("Passing data to Chantierter:", chantier);
-    navigation.navigate("chantierter", { rdv : chantier });
-  };
-  
-  
+  }
 
   return (
     <ScrollView>
       <View style={styles.container}>
         <View style={styles.barrech}>
-          <Image source={require("../../assets/images/search.png")}  
-          style={styles.image} />
+          <Image
+            source={require("../../assets/images/search.png")}
+            style={styles.image}
+          />
           <TextInput
             style={styles.input}
-            placeholder="Search..."
+            placeholder="Rechercher..."
             value={searchQuery}
-            onChangeText={(text) => setSearchQuery(text)}
+            onChangeText={setSearchQuery}
           />
         </View>
-        {filteredChantiers.map((chantier) => (
-          <View key={chantier.id} style={styles.column}>
-            <Text style={styles.grdtext}>{chantier.title}</Text>
-            <Text style={styles.mintext}>{chantier.name}</Text>
-            <Text style={styles.mintext}>{chantier.email}</Text>
-            <Text style={styles.mintext}>{chantier.phone}</Text>
-            <Text style={styles.mintext}>{chantier.address}</Text>
-            <View style={styles.vbutton}>
-              <TouchableOpacity style={styles.button}
-            onPress={goToChantierTer(chantier)}  >
-                <Text style={styles.buttonText}>Afficher les détails</Text>
-              </TouchableOpacity>
-            </View>
+        
+        {filteredChantiers.length === 0 ? (
+          <View style={styles.noResultsContainer}>
+            <Text style={styles.grdtext}>
+              Aucun chantier fini trouvé
+            </Text>
           </View>
-        ))}
+        ) : (
+          filteredChantiers.map((chantier) => (
+            <View key={chantier._id} style={styles.column}>
+              <Text style={styles.grdtext}>{chantier.title}</Text>
+              <Text style={styles.mintext}>{chantier.name}</Text>
+              <Text style={styles.mintext}>{chantier.email}</Text>
+              <Text style={styles.mintext}>{chantier.phone}</Text>
+              <Text style={styles.mintext}>{chantier.address}</Text>
+              <Text style={styles.mintext}>{chantier.status}</Text>
+              <View style={styles.vbutton}>
+                <TouchableOpacity
+                  style={styles.button}
+                  onPress={() => 
+                    navigation.navigate("chantierter", { chantier: chantier })
+                  }
+                >
+                  <Text style={styles.buttonText}>Afficher les détails</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          ))
+        )}
       </View>
+      
     </ScrollView>
   );
 }
+ 
 
 const styles = StyleSheet.create({
   container: {
@@ -94,6 +167,17 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     paddingHorizontal: 10,
   },
+  noResultsContainer: {
+    width: '100%',
+    padding: 20,
+    alignItems: 'center',
+  },
+  noResultsText: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+  } ,
+
   mintext: {
     marginLeft: 10,
     fontSize: 18,

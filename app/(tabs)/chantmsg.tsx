@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Image,
   View,
@@ -8,108 +8,130 @@ import {
   ScrollView,
   TextInput,
 } from "react-native";
+import { useChantier } from "./chantiercontext";
+import { API_URL } from '../../config/api.config';
 
-export default function App() {
-  const [searchQuery, setSearchQuery] = useState(""); // State to track search input
-  const rdvs = [
-    {
-      id: 1,
-      title: "objet 1",
-      date: "mercredi 21 novembre",
-      hour: "16:30",
-      email: "nsmhadj@gmail.com",
-      address: "3 alle de vieux chene , ecuille",
-      name: "nassim hadjebar",
-      phone: "0748418023",
-    },
-    {
-      id: 2,
-      date: "jeudi 22 novembre",
-      title: "objet 2",
-      email: "nsmhadj@gmail.com",
-      hour: "16:30",
-      address: "4 rue de la paix , Paris",
-      name: "amine bouzid",
-      phone: "0756342011",
-    },
-    {
-      id: 3,
-      title: "objet 3",
-      date: "vendredi 23 novembre",
-      hour: "14:30",
-      email: "sara@gmail.com",
-      address: "12 avenue Champs, Lyon",
-      name: "sara benamar",
-      phone: "0789012345",
-    },
-    {
-      id: 4,
-      title: "objet 4",
-      date: "samedi 24 novembre",
-      hour: "09:00",
-      email: "yasmine@gmail.com",
-      address: "6 boulevard Haussmann, Marseille",
-      name: "yasmine saad",
-      phone: "0765432109",
-    },
-    {
-      id: 5,
-      title: "objet 5",
-      date: "dimanche 25 novembre",
-      hour: "11:15",
-      email: "rachid@gmail.com",
-      address: "8 rue Jean Jaurès, Toulouse",
-      name: "rachid messaoudi",
-      phone: "0712345678",
-    },
-    // Add more RDVs as needed
-  ];
+export default function chantmsg({ navigation }) {
+  const [searchQuery, setSearchQuery] = useState("");
+  const { chantiers, setChantiers } = useChantier();
+  const [loading, setLoading] = useState(true);
 
-  // Filter the RDVs based on the search query
-  const filteredRdvs = rdvs.filter((rdv) => {
-    const query = searchQuery.toLowerCase();
+  useEffect(() => {
+    const fetchproposedChantiers = async () => {
+      try {
+        console.log('Fetching data...');
+        const response = await fetch(`${API_URL}/rdv`);
+        console.log('Response status:', response.status);
+        
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+        
+        const data = await response.json();
+        console.log('All chantiers:', data);
+        
+        const proposedChantiers = data.filter(rdv => rdv.status === 'proposé');
+        console.log('Filtered propsed chantiers:', proposedChantiers);
+        
+        setChantiers(proposedChantiers);
+      } catch (error) {
+        console.error("Error fetching chantiers:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchproposedChantiers();
+  }, []);
+
+  // Add this logging to see when chantiers changes
+  useEffect(() => {
+    // Clear any existing data first
+    setChantiers([]); // or however you're storing your chantiers
+  
+    const unsubscribe = navigation.addListener('focus', () => {
+      // Fetch only chantiers with status "proposé"
+      fetchChantiers();
+    });
+
+    return unsubscribe;
+  }, [navigation]);
+  const fetchChantiers = async () => {
+    try {
+      const response = await fetch(`${API_URL}/rdv`);
+      const data = await response.json();
+      // Filter to only show "proposé" status
+      const proposedChantiers = data.filter(chantier => chantier.status === 'proposé');
+      setChantiers(proposedChantiers);
+    } catch (error) {
+      console.error('Error fetching chantiers:', error);
+    }
+  };
+  
+
+  const filteredChantiers = chantiers.filter(chantier => 
+    chantier.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    chantier.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    chantier.address.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  if (loading) {
     return (
-      rdv.title.toLowerCase().includes(query) ||
-      rdv.name.toLowerCase().includes(query) ||
-      rdv.email.toLowerCase().includes(query) ||
-      rdv.phone.includes(query) ||
-      rdv.address.toLowerCase().includes(query)
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <Text>Chargement des chantiers...</Text>
+      </View>
     );
-  });
+  }
 
   return (
     <ScrollView>
       <View style={styles.container}>
         <View style={styles.barrech}>
           <Image
-            source={require("../../assets/images/search.png")} // Adjust the path to your image
+            source={require("../../assets/images/search.png")}
             style={styles.image}
           />
           <TextInput
             style={styles.input}
-            placeholder="Search..." // Add placeholder text
-            value={searchQuery} // Bind the value to the state
-            onChangeText={(text) => setSearchQuery(text)} // Update the state on input
+            placeholder="Rechercher..."
+            value={searchQuery}
+            onChangeText={setSearchQuery}
           />
         </View>
-        {filteredRdvs.map((rdv) => (
-          <View key={rdv.id} style={styles.column}>
-            <Text style={styles.grdtext}>{rdv.title}</Text>
-            <Text style={styles.mintext}>{rdv.name}</Text>
-            <Text style={styles.mintext}>{rdv.email}</Text>
-            <Text style={styles.mintext}>{rdv.phone}</Text>
-            <Text style={styles.mintext}>{rdv.address}</Text>
-            <View style={styles.vbutton}>
-              <TouchableOpacity style={styles.button}>
-                <Text style={styles.buttonText}>afficher les details</Text>
-              </TouchableOpacity>
-            </View>
+        
+        {filteredChantiers.length === 0 ? (
+          <View style={styles.noResultsContainer}>
+            <Text style={styles.noResultsText}>
+              Aucun chantier en cours trouvé
+            </Text>
           </View>
-        ))}
+        ) : (
+          filteredChantiers.map((chantier) => (
+            <View key={chantier._id} style={styles.column}>
+              <Text style={styles.grdtext}>{chantier.title}</Text>
+              <Text style={styles.mintext}>{chantier.name}</Text>
+              <Text style={styles.mintext}>{chantier.email}</Text>
+              <Text style={styles.mintext}>{chantier.phone}</Text>
+              <Text style={styles.mintext}>{chantier.address}</Text>
+              <View style={styles.vbutton}>
+                <TouchableOpacity
+                  style={styles.button}
+                  onPress={() => 
+                    navigation.navigate("chantprop", { chantier: chantier })
+                  }
+                >
+                  <Text style={styles.buttonText}>Afficher les détails</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          ))
+        )}
       </View>
+     
     </ScrollView>
   );
 }
+ 
 
 const styles = StyleSheet.create({
   container: {
@@ -148,6 +170,17 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     paddingHorizontal: 10,
   },
+  noResultsContainer: {
+    width: '100%',
+    padding: 20,
+    alignItems: 'center',
+  },
+  noResultsText: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+  } ,
+
   mintext: {
     marginLeft: 10,
     fontSize: 18,
@@ -166,6 +199,7 @@ const styles = StyleSheet.create({
     height: 35,
     width: 120,
     marginRight: 20,
+    marginLeft: 130,
     alignItems: "center",
     justifyContent: "center",
     marginTop: 20,
@@ -177,7 +211,7 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   input: {
-    flex: 1, // Take up the remaining space in the search bar
+    flex: 1,
     height: 40,
     fontSize: 16,
   },

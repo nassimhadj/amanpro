@@ -1,11 +1,12 @@
-import React, { useState, useContext, useEffect } from 'react';
+import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, TextInput, Alert, Image } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { RdvContext } from './rdvcontext'; // Adjust the path if needed
-import AsyncStorage from '@react-native-async-storage/async-storage'; // Import AsyncStorage
+import { API_URL } from '@/config/api.config';
+import { useNavigation } from '@react-navigation/native';
+import AddressAutocomplete from './adrresseauto';
 
 export default function Ajoutrdv() {
-  const { rdvs, setRdvs } = useContext(RdvContext);
+  const navigation = useNavigation();
 
   const [address, setAddress] = useState('');
   const [name, setName] = useState('');
@@ -27,43 +28,15 @@ export default function Ajoutrdv() {
     setTime(currentTime);
   };
 
-  // Load RDVs from AsyncStorage when the component mounts
-  useEffect(() => {
-    const loadRdvs = async () => {
-      try {
-        const storedRdvs = await AsyncStorage.getItem('rdvs');
-        if (storedRdvs) {
-          setRdvs(JSON.parse(storedRdvs)); // Parse and set RDVs if they exist
-        }
-      } catch (error) {
-        console.error('Error loading RDVs:', error);
-      }
-    };
-
-    loadRdvs();
-  }, []);
-
-  // Save RDVs to AsyncStorage whenever they change
-  useEffect(() => {
-    const saveRdvs = async () => {
-      try {
-        await AsyncStorage.setItem('rdvs', JSON.stringify(rdvs)); // Save RDVs as a JSON string
-      } catch (error) {
-        console.error('Error saving RDVs:', error);
-      }
-    };
-
-    saveRdvs();
-  }, [rdvs]); // Run every time rdvs change
-
-  const handleAddRDV = () => {
+  const handleAddRDV = async () => {
+    // Validation
     if (!address || !name || !phone) {
       Alert.alert('Erreur', 'Veuillez remplir tous les champs !');
       return;
     }
 
-    const newRDV = {
-      id: Math.random().toString(),
+    // Prepare appointment data
+    const appointmentData = {
       name,
       address,
       phone,
@@ -74,19 +47,39 @@ export default function Ajoutrdv() {
 
     // Check if the new RDV is in the past
     const now = new Date();
-    if (newRDV.datetime < now) {
+    if (appointmentData.datetime < now) {
       Alert.alert('Erreur', 'La date et l\'heure du RDV sont déjà passées !');
       return;
     }
 
-    // Add the new RDV and sort the list
-    setRdvs(prevRdvs => {
-      const updatedRdvs = [...prevRdvs, newRDV].sort((a, b) => a.datetime - b.datetime);
-      return updatedRdvs;
-    });
+    try {
+      // Send POST request to backend
+      const response = await fetch(`${API_URL}/appointments`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(appointmentData),
+      });
 
-    Alert.alert('Succès', 'RDV ajouté avec succès !');
-    clearForm();
+      if (!response.ok) {
+        throw new Error('Failed to add appointment');
+      }
+
+      // Show success alert
+      Alert.alert('Succès', 'RDV ajouté avec succès !', [
+        {
+          text: 'OK',
+          onPress: () => navigation.goBack(), // Navigate back to previous screen
+        }
+      ]);
+
+      // Clear the form
+      clearForm();
+    } catch (error) {
+      console.error('Error adding appointment:', error);
+      Alert.alert('Erreur', 'Impossible d\'ajouter le RDV. Veuillez réessayer.');
+    }
   };
 
   const clearForm = () => {
@@ -104,13 +97,11 @@ export default function Ajoutrdv() {
         {/* Adresse */}
         <View style={styles.row}>
           <Image source={require('../../assets/images/map-pin.png')} style={styles.image} />
-          <TextInput
-            style={styles.input}
-            placeholder="Entrez l'adresse du RDV"
-            placeholderTextColor="#888"
-            value={address}
-            onChangeText={setAddress}
-          />
+          <AddressAutocomplete
+  value={address}
+  onSelectAddress={(address) => setAddress(address)}
+  
+/>
         </View>
 
         {/* Nom */}

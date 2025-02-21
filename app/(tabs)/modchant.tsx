@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from "react"; 
+import { API_URL } from "../../config/api.config";
+import AddressAutocomplete from "./adrresseauto";
 import {
   Modal,
   Image,
@@ -9,16 +11,13 @@ import {
   ScrollView,
   TextInput,
   ActivityIndicator, 
+  Platform
 } from "react-native";
 import { useChantier } from "./chantiercontext";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-
 import * as ImagePicker from "expo-image-picker";
 
-export default function modchant({ route , navigation }) {
-  // Initialise l'état avec les données du chantier passées en paramètre
+export default function ModChant({ route, navigation }) {
   const [rdv, setRdv] = useState(route?.params?.chantier || { etapes: [], attachments: [] });
-
   const { chantierId } = route.params;
   const [selectedImage, setSelectedImage] = useState(null);
   const [isImageLoading, setIsImageLoading] = useState(false); 
@@ -30,15 +29,21 @@ export default function modchant({ route , navigation }) {
       setRdv(route.params.chantier);
     }
   }, [route?.params?.chantier]);
-
-
+  
+  useEffect(() => {
+    const currentChantier = chantiers.find(
+      (chantier) => chantier._id === route.params.chantierId
+    );
+    if (currentChantier) {
+      setRdv(currentChantier);
+    }
+  }, [chantiers, route.params.chantierId]);
   useEffect(() => {
     const currentChantier = chantiers.find((chantier) => chantier.id === chantierId);
     if (currentChantier) {
       setRdv(currentChantier);
     }
   }, [chantiers, chantierId]);
-  
 
   const modifyEtape = (index, field, value) => {
     const newEtapes = [...rdv?.etapes];
@@ -63,32 +68,32 @@ export default function modchant({ route , navigation }) {
     }
   };
 
-  // Fonction pour ajouter une image avec expo-image-picker
   const addImage = async () => {
     const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permissionResult.granted) {
       alert("Permission to access media library is required!");
       return;
     }
-
+  
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       quality: 1,
+      allowsEditing: true,
+      aspect: [4, 3],
     });
-
+  
     if (!result.canceled) {
       const imageUri = result.assets[0].uri;
-      setRdv((prevRdv) => ({
+      setRdv(prevRdv => ({
         ...prevRdv,
-        attachments: [...prevRdv?.attachments, { uri: imageUri }],
+        attachments: [...prevRdv.attachments, { uri: imageUri }]
       }));
     }
   };
-
-  // Fonctions pour Annuler et Appliquer
+  
+  
   const handleCancel = () => {
     navigation.goBack();
-    // Réinitialiser l'état ou gérer la logique d'annulation
     alert("Modifications annulées!");
   };
 
@@ -99,28 +104,99 @@ export default function modchant({ route , navigation }) {
     }
   
     try {
-      const updatedChantiers = chantiers.map((chantier) =>
-        chantier.id === chantierId ? { ...chantier, ...rdv } : chantier
-      );
-      setChantiers(updatedChantiers); // Updates context and AsyncStorage
+      const formData = new FormData();
+      
+      // Add basic fields
+      formData.append('title', rdv.title);
+      formData.append('email', rdv.email);
+      formData.append('name', rdv.name);
+      formData.append('phone', rdv.phone);
+      formData.append('address', rdv.address);
+      formData.append('description', rdv.description);
+      formData.append('status', rdv.status);
+      formData.append('etapes', JSON.stringify(rdv.etapes));
+  
+      // Handle existing attachments
+      const existingAttachments = rdv.attachments
+        .filter(att => att.path) // Only those with path are existing
+        .map(({filename, path, uploadDate}) => ({
+          filename,
+          path,
+          uploadDate
+        }));
+  
+      // Add existing attachments to formData
+      formData.append('existingAttachments', JSON.stringify(existingAttachments));
+  
+      // Handle new attachments (those with uri)
+      const newAttachments = rdv.attachments.filter(att => att.uri && !att.path);
+      
+      for (let i = 0; i < newAttachments.length; i++) {
+        const attachment = newAttachments[i];
+        console.log('Processing new attachment:', i);
+        
+        // Get the file name from the URI
+        const uriParts = attachment.uri.split('/');
+        const fileName = uriParts[uriParts.length - 1];
+  
+        // Create the file object for the new attachment
+        formData.append('attachments', {
+          uri: attachment.uri,
+          type: 'image/jpeg',
+          name: fileName,
+        });
+        
+        console.log('Added new attachment:', fileName);
+      }
+  
+      console.log('Sending update request with formData:', {
+        existingAttachments: existingAttachments.length,
+        newAttachments: newAttachments.length
+      });
+  
+      const response = await fetch(`${API_URL}/rdv/${rdv._id}`, {
+        method: 'PUT',
+        body: formData,
+        headers: {
+          'Accept': 'application/json',
+        },
+      });
+  
+      if (!response.ok) {
+        const errorData = await response.text();
+        throw new Error(`Failed to update chantier: ${errorData}`);
+      }
+  
+      const data = await response.json();
+      
+      // Update local state
+      setRdv(data);
+      
+      // Update global chantiers state if needed
+      setChantiers(prevChantiers => {
+        const updatedChantiers = prevChantiers.map(chantier => 
+          chantier._id === data._id ? data : chantier
+        );
+        return updatedChantiers;
+      });
+  
       alert("Changes applied successfully!");
-      navigation.navigate("chantier", { chantier : rdv });
+      navigation.navigate("chantier", { chantier: data });
+  
     } catch (error) {
-      console.error("Failed to apply changes:", error);
-      alert("An error occurred while saving changes.");
+      console.error('Failed to apply changes:', error);
+      alert('Error: ' + error.message);
     }
   };
   
-  // Fonction pour ouvrir une image avec un indicateur de chargement
   const openImage = (uri) => {
-    setIsImageLoading(true); // Démarrer le chargement
+    setIsImageLoading(true);
     setSelectedImage(uri);
   };
 
-  // Fonction pour fermer l'image
   const closeImage = () => {
     setSelectedImage(null);
-    setIsImageLoading(false); // Arrêter le chargement
+    setIsImageLoading(false);
   };
 
   return (
@@ -152,12 +228,11 @@ export default function modchant({ route , navigation }) {
             value={rdv?.phone}
             onChangeText={(text) => setRdv({ ...rdv, phone: text })}
           />
-          <TextInput
-            style={styles.input}
-            placeholder="Address"
-            value={rdv?.address}
-            onChangeText={(text) => setRdv({ ...rdv, address: text })}
-          />
+          <AddressAutocomplete
+  value={rdv.address}
+  onSelectAddress={(address) => setRdv({ ...rdv, address })}
+  
+/>
           <TextInput
             style={[styles.input, { height: 100 }]}
             placeholder="Description"
@@ -217,26 +292,37 @@ export default function modchant({ route , navigation }) {
             <Text style={styles.buttonText2}>Add Image</Text>
           </TouchableOpacity>
           <View style={styles.imageRow}>
-            {rdv?.attachments?.map((attachment, index) => (
-              <View key={index} style={styles.attachmentContainer}>
-                <TouchableOpacity onPress={() => openImage(attachment?.uri)}>
-                  <Image
-                    source={{ uri: attachment?.uri }}
-                    style={styles.attachmentImage}
-                  />
-                </TouchableOpacity>
-                <TouchableOpacity
-                  onPress={() => deleteAttachment(index)}
-                  style={styles.deleteButtonIcon}
-                >
-                  <Image
-                    source={require('../../assets/images/Vector.png')}
-                    style={styles.deleteIconImage}
-                  />
-                </TouchableOpacity>
-              </View>
-            ))}
-          </View>
+  {rdv?.attachments?.map((attachment, index) => {
+    const imageUri = attachment.uri 
+      ? attachment.uri  // For new images
+      : `${API_URL}/rdv/uploads/${attachment.filename}`; // For server images
+    
+    console.log('Trying to load image from:', imageUri);
+
+    return (
+      <View key={index} style={styles.attachmentContainer}>
+        <TouchableOpacity onPress={() => openImage(imageUri)}>
+          <Image 
+            source={{ uri: imageUri }}
+            style={styles.attachmentImage}
+            onError={(e) => console.log('Image error:', e.nativeEvent.error)}
+          />
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={() => deleteAttachment(index)}
+          style={styles.deleteButtonIcon}
+        >
+          <Image
+            source={require('../../assets/images/Vector.png')}
+            style={styles.deleteIconImage}
+          />
+        </TouchableOpacity>
+      </View>
+    );
+  })}
+</View>
+  
+ 
         </View>
       </ScrollView>
 

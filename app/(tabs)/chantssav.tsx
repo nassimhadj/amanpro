@@ -11,43 +11,17 @@ import {
 import { useChantier } from "./chantiercontext";
 import { API_URL } from '../../config/api.config';
 
-export default function Chantiers({ navigation }) {
+export default function chantssav({ navigation }) {
   const [searchQuery, setSearchQuery] = useState("");
   const { chantiers, setChantiers } = useChantier();
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchEnCoursChantiers = async () => {
-      try {
-        console.log('Fetching data...');
-        const response = await fetch(`${API_URL}/rdv`);
-        console.log('Response status:', response.status);
-        
-        if (!response.ok) {
-          throw new Error('Network response was not ok');
-        }
-        
-        const data = await response.json();
-        console.log('All chantiers:', data);
-        
-        const enCoursChantiers = data.filter(rdv => rdv.status === 'en cours');
-        console.log('Filtered en cours chantiers:', enCoursChantiers);
-        
-        setChantiers(enCoursChantiers);
-      } catch (error) {
-        console.error("Error fetching chantiers:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchEnCoursChantiers();
-  }, []);
+  
   useEffect(() => {
     // Clear existing data first
     setChantiers([]);
     
-    const fetchEnCoursChantiers = async () => {
+    const fetchsavChantiers = async () => {
       try {
         console.log('Fetching data...');
         const response = await fetch(`${API_URL}/rdv`);
@@ -60,10 +34,10 @@ export default function Chantiers({ navigation }) {
         const data = await response.json();
         console.log('All chantiers:', data);
         
-        const enCoursChantiers = data.filter(rdv => rdv.status === 'en cours');
-        console.log('Filtered en cours chantiers:', enCoursChantiers);
+        const savChantiers = data.filter(rdv => rdv.status === 'SAV');
+        console.log('Filtered en cours chantiers:', savChantiers);
         
-        setChantiers(enCoursChantiers);
+        setChantiers(savChantiers);
       } catch (error) {
         console.error("Error fetching chantiers:", error);
       } finally {
@@ -74,11 +48,11 @@ export default function Chantiers({ navigation }) {
     // Add navigation focus listener
     const unsubscribe = navigation.addListener('focus', () => {
       setLoading(true);
-      fetchEnCoursChantiers();
+      fetchsavChantiers();
     });
   
     // Initial fetch
-    fetchEnCoursChantiers();
+    fetchsavChantiers();
   
     // Cleanup listener
     return unsubscribe;
@@ -122,7 +96,7 @@ export default function Chantiers({ navigation }) {
         {filteredChantiers.length === 0 ? (
           <View style={styles.noResultsContainer}>
             <Text style={styles.grdtext}>
-              Aucun chantier en cours trouvé
+              Aucun chantier en SAV trouvé
             </Text>
           </View>
         ) : (
@@ -138,7 +112,7 @@ export default function Chantiers({ navigation }) {
                 <TouchableOpacity
                   style={styles.button}
                   onPress={() => 
-                    navigation.navigate("chantier", { chantier: chantier })
+                    navigation.navigate("chantsav", { chantier: chantier })
                   }
                 >
                   <Text style={styles.buttonText}>Afficher les détails</Text>
@@ -148,12 +122,7 @@ export default function Chantiers({ navigation }) {
           ))
         )}
       </View>
-      <TouchableOpacity 
-        style={styles.button}
-        onPress={() => navigation.navigate("creerchantier")}
-      >
-        <Text style={styles.buttonText}>Ajouter un chantier</Text>
-      </TouchableOpacity>
+      
     </ScrollView>
   );
 }
