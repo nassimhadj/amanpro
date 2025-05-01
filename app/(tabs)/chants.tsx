@@ -20,8 +20,8 @@ export default function ChantierTopTabNavigator() {
           tabBarLabelStyle: styles.tabBarLabel,
           tabBarIndicatorStyle: styles.tabBarIndicator,
           tabBarScrollEnabled: true,
-          tabBarActiveTintColor: '#000',
-          tabBarInactiveTintColor: '#888',
+          tabBarActiveTintColor: '#0077b6',
+          tabBarInactiveTintColor: '#0077b1',
           lazy: true,
           swipeEnabled: false,
           tabBarPressColor: 'transparent',
@@ -85,14 +85,14 @@ export default function ChantierTopTabNavigator() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#fff',
   },
   tabBar: {
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#fff',
     elevation: 0,
     shadowOpacity: 0,
     borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
+    borderBottomColor: '#0077b6',
   },
   tabBarLabel: {
     fontSize: 14,
@@ -101,7 +101,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
   },
   tabBarIndicator: {
-    backgroundColor: '#000',
+    backgroundColor: '#0077b6',
     height: 3,
   },
 });

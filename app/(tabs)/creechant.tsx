@@ -225,24 +225,28 @@ useEffect(() => {
           <TextInput
             style={styles.input}
             placeholder="Titre"
+            placeholderTextColor="#0077b6"
             value={rdv.title}
             onChangeText={(text) => setRdv({ ...rdv, title: text })}
           />
           <TextInput
             style={styles.input}
             placeholder="Email"
+            placeholderTextColor="#0077b6"
             value={rdv.email}
             onChangeText={(text) => setRdv({ ...rdv, email: text })}
           />
           <TextInput
             style={styles.input}
             placeholder="Nom"
+            placeholderTextColor="#0077b6"
             value={rdv.name}
             onChangeText={(text) => setRdv({ ...rdv, name: text })}
           />
           <TextInput
             style={styles.input}
             placeholder="Téléphone"
+            placeholderTextColor="#0077b6"
             value={rdv.phone}
             onChangeText={(text) => setRdv({ ...rdv, phone: text })}
             keyboardType="numeric"
@@ -253,9 +257,11 @@ useEffect(() => {
   onSelectAddress={(address) => setRdv({ ...rdv, address })}
   
 />
+<Text style={styles.sectionTitle}>Description :</Text>
           <TextInput
             style={[styles.input, { height: 100 }]}
-            placeholder="Description"
+            placeholder="entrez la Description"
+            placeholderTextColor="#0077b6"
             multiline
             value={rdv.description}
             onChangeText={(text) => setRdv({ ...rdv, description: text })}
@@ -266,12 +272,14 @@ useEffect(() => {
               <TextInput
                 style={styles.input}
                 placeholder="Titre de l'étape"
+                placeholderTextColor="#0077b6"
                 value={etape.title}
                 onChangeText={(text) => modifyEtape(index, "title", text)}
               />
               <TextInput
                 style={[styles.input, { height: 60 }]}
                 placeholder="Description de l'étape"
+                placeholderTextColor="#0077b6"
                 multiline
                 value={etape.descriptif}
                 onChangeText={(text) =>
@@ -284,12 +292,14 @@ useEffect(() => {
           <TextInput
             style={styles.input}
             placeholder="Titre de l'étape"
+            placeholderTextColor="#0077b6"
             value={newEtape.title}
             onChangeText={(text) => setNewEtape({ ...newEtape, title: text })}
           />
           <TextInput
             style={[styles.input, { height: 60 }]}
             placeholder="Description de l'étape"
+            placeholderTextColor="#0077b6"
             multiline
             value={newEtape.descriptif}
             onChangeText={(text) =>
@@ -348,8 +358,9 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 16,
     fontWeight: "bold",
-    marginTop: 10,
-    marginBottom: 5,
+    color:"#0077b6",
+    marginTop: 20,
+    marginBottom: 15,
   },
   imageRow: {
     flexDirection: "row",
@@ -391,7 +402,7 @@ const styles = StyleSheet.create({
   },
   button2: {
     backgroundColor: "#FFFFFF",
-    borderColor: "#000",
+    borderColor: "#0077b6",
     borderWidth: 2,
     height: 40,
     width: 125,
@@ -401,7 +412,7 @@ const styles = StyleSheet.create({
     marginBottom:30,
   },
   buttonText2: {
-    color: "#000",
+    color: "#0077b6",
     fontSize: 16,
     fontWeight: "bold",
   },
@@ -409,12 +420,13 @@ const styles = StyleSheet.create({
     position: "relative",
   },
   input: {
-    width: "90%",
-    borderWidth: 1,
-    borderColor: "#ccc",
-    padding: 10,
-    borderRadius: 5,
-    marginBottom: 10,
+    flex: 1,
+    height: 40,
+    borderBottomWidth: 1,
+    borderBottomColor: '#0077b6',
+    fontSize: 16,
+    marginBottom:30,
+    color: '#0077b6',
   },
   etape: {
     marginBottom: 10,
@@ -429,7 +441,7 @@ const styles = StyleSheet.create({
     padding: 10,
   },
   button: {
-    backgroundColor: "#000",
+    backgroundColor: "#0077b6",
     paddingVertical: 15,
     width: "45%",
     alignItems: "center",

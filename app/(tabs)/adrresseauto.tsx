@@ -48,8 +48,8 @@ const AddressAutocomplete = ({ onSelectAddress, value, style }) => {
           setQuery(text);
           searchAddress(text);
         }}
-        placeholder="adresse"
-        placeholderTextColor="#888"
+        placeholder="entrez l'adresse"
+        placeholderTextColor="#0077b6"
       />
       {showSuggestions && suggestions && suggestions.length > 0 && (
         <FlatList
@@ -78,11 +78,12 @@ const styles = StyleSheet.create({
     width: '90%',
   },
   input: {
-    borderWidth: 1,
-    borderColor: '#ccc',
-    padding: 10,
-    borderRadius: 5,
-    marginBottom: 10,
+    width : '92%' ,
+    height: 40,
+    borderBottomWidth: 1,
+    borderBottomColor: '#0077b6',
+    fontSize: 16,
+    color: '#0077b6',
   },
   suggestionsList: {
     position: 'absolute',
@@ -93,13 +94,13 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     maxHeight: 200,
     borderWidth: 1,
-    borderColor: '#ccc',
+    borderColor: '#0077b6',
     zIndex: 1000,
   },
   suggestionItem: {
     padding: 10,
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    borderBottomColor: '#0077b6',
   },
   suggestionText: {
     fontSize: 14,

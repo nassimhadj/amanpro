@@ -1,38 +1,49 @@
 import React, { useState, useEffect } from "react";
 import { BackHandler } from 'react-native';
-import { View, Text, StyleSheet, Image, ScrollView, Modal, TouchableOpacity, RefreshControl , Alert } from "react-native";
+import { 
+  View, 
+  Text, 
+  StyleSheet, 
+  Image, 
+  ScrollView, 
+  Modal, 
+  TouchableOpacity, 
+  RefreshControl, 
+  Alert,
+  ActivityIndicator 
+} from "react-native";
 import { useChantierTer } from "./chantiertercontext";
 import { useChantier } from "./chantiercontext";
-import { API_URL } from "@/config/api.config";
+import { API_URL } from "../../config/api.config";
 
-export default function chantierter({ route, navigation }) {
-  const { chantier } = route.params || {}; // Safe destructuring
+export default function chantprop({ route, navigation }) {
+  const { chantier } = route.params || {};
   if (!chantier) {
-    return <Text>Loading...</Text>; // Display a loading state if no chantier is available
-  } // Récupérer les données du chantier
+    return <Text>Loading...</Text>;
+  }
 
   const [selectedImage, setSelectedImage] = useState(null);
+  const [isImageLoading, setIsImageLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  const [updatedChantier, setUpdatedChantier] = useState(chantier); // State to store updated chantier
+  const [updatedChantier, setUpdatedChantier] = useState(chantier);
   const { addChantierTer } = useChantierTer();
   const { chantiers, removeChantier } = useChantier();
 
   const onRefresh = async () => {
     setRefreshing(true);
     try {
-      // Log the URL we're trying to fetch
       const fetchUrl = `${API_URL}/rdv/${updatedChantier._id}`;
       console.log('Fetching from URL:', fetchUrl);
-  
+
       const response = await fetch(fetchUrl);
       console.log('Response status:', response.status);
-  
+
       if (!response.ok) {
         const errorText = await response.text();
         console.log('Error response:', errorText);
         throw new Error('Failed to refresh data');
       }
-  
+
       const updatedData = await response.json();
       console.log('Received data:', updatedData);
       
@@ -45,16 +56,15 @@ export default function chantierter({ route, navigation }) {
     }
   };
 
-  // Listen for when the screen comes back into focus (after modification)
   useEffect(() => {
     const unsubscribe = navigation.addListener('focus', () => {
       if (route.params?.updatedChantier) {
-        setUpdatedChantier(route.params.updatedChantier); // Update chantier data with modified values
+        setUpdatedChantier(route.params.updatedChantier);
       }
     });
     
     const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
-        navigation.navigate('chants', { refresh: true });
+      navigation.navigate('chantmsg', { refresh: true });
       return true;
     });
   
@@ -63,6 +73,79 @@ export default function chantierter({ route, navigation }) {
       unsubscribe();
     };
   }, [navigation, route.params?.updatedChantier]);
+
+  const handleAccept = async () => {
+    try {
+      const newEtape = {
+        title: "Acceptation du chantier",
+        descriptif: `Chantier accepté le ${new Date().toLocaleDateString('fr-FR')}`
+      };
+
+      const currentEtapes = updatedChantier.etapes || [];
+      const updatedEtapes = [...currentEtapes, newEtape];
+
+      const response = await fetch(`${API_URL}/rdv/${updatedChantier._id}/status`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          status: 'attente de demarrage',
+          etapes: updatedEtapes
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update status');
+      }
+
+      const updatedData = await response.json();
+      removeChantier(updatedChantier._id);
+      
+      Alert.alert("Succès", "Chantier accepté avec succès");
+      navigation.navigate('chantmsg', { refresh: true });
+
+    } catch (error) {
+      console.error('Error accepting chantier:', error);
+      Alert.alert("Erreur", "Erreur lors de l'acceptation du chantier");
+    }
+  };
+
+  const handleRefuse = async () => {
+    try {
+      const newEtape = {
+        title: "Refus du chantier",
+        descriptif: `Chantier refusé le ${new Date().toLocaleDateString('fr-FR')}`
+      };
+
+      const currentEtapes = updatedChantier.etapes || [];
+      const updatedEtapes = [...currentEtapes, newEtape];
+
+      const response = await fetch(`${API_URL}/rdv/${updatedChantier._id}/status`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          status: 'refusé',
+          etapes: updatedEtapes
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update status');
+      }
+
+      const updatedData = await response.json();
+      removeChantier(updatedChantier._id);
+      
+      Alert.alert("Information", "Chantier refusé");
+      navigation.navigate('chantmsg', { refresh: true });
+    } catch (error) {
+      console.error('Error refusing chantier:', error);
+      Alert.alert("Erreur", "Erreur lors du refus du chantier");
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -118,6 +201,21 @@ export default function chantierter({ route, navigation }) {
         </View>
       </ScrollView>
 
+      <View style={styles.vbutton}>
+        <TouchableOpacity
+          style={styles.button2}
+          onPress={handleRefuse}
+        >
+          <Text style={styles.buttonText2}>Refuser</Text>
+        </TouchableOpacity>
+        <TouchableOpacity 
+          style={styles.button}
+          onPress={handleAccept}
+        >
+          <Text style={styles.buttonText}>Accepter</Text>
+        </TouchableOpacity>
+      </View>
+
       {selectedImage && (
         <Modal
           transparent={true}
@@ -132,7 +230,17 @@ export default function chantierter({ route, navigation }) {
             >
               <Text style={styles.closeText}>Close</Text>
             </TouchableOpacity>
-            <Image source={{ uri: selectedImage }} style={styles.fullImage} />
+
+            {isImageLoading && (
+              <ActivityIndicator size="large" color="#0077b6" style={styles.loader} />
+            )}
+
+            <Image 
+              source={{ uri: selectedImage }}
+              style={styles.fullImage}
+              onLoadStart={() => setIsImageLoading(true)}
+              onLoadEnd={() => setIsImageLoading(false)}
+            />
           </View>
         </Modal>
       )}
@@ -157,21 +265,24 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "bold",
     marginBottom: 10,
+    color:"#0077b6"
   },
   text: {
     fontSize: 16,
     marginBottom: 5,
+    color:"#0077b6"
   },
   sectionTitle: {
     fontSize: 16,
     fontWeight: "bold",
     marginTop: 10,
     marginBottom: 5,
+    color:"#0077b6"
   },
   description: {
     marginBottom: 15,
     fontSize: 14,
-    color: "#555",
+    color: "#0077b6",
   },
   imageRow: {
     flexDirection: "row",
@@ -179,9 +290,6 @@ const styles = StyleSheet.create({
     gap: 10,
     marginTop: 10,
     justifyContent: "space-between",
-  },
-  attachmentContainer: {
-    position: "relative",
   },
   attachmentImage: {
     width: 80,
@@ -191,7 +299,7 @@ const styles = StyleSheet.create({
   },
   modalContainer: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    backgroundColor: "rgba(0, 0, 0, 0.8)",
     justifyContent: "center",
     alignItems: "center",
   },
@@ -199,6 +307,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: 40,
     right: 20,
+    zIndex: 2,
   },
   closeText: {
     color: "#fff",
@@ -210,6 +319,10 @@ const styles = StyleSheet.create({
     height: "70%",
     resizeMode: "contain",
   },
+  loader: {
+    position: "absolute",
+    zIndex: 1,
+  },
   vbutton: {
     flexDirection: "row",
     justifyContent: "space-around",
@@ -218,7 +331,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
   },
   button: {
-    backgroundColor: "#000000",
+    backgroundColor: "#0077b6",
     height: 40,
     width: 140,
     alignItems: "center",
@@ -232,21 +345,24 @@ const styles = StyleSheet.create({
   },
   button2: {
     backgroundColor: "#FFFFFF",
-    borderColor: "#000",
+    borderColor: "#0077b6",
     borderWidth: 2,
     height: 40,
-    width: 125,
+    width: 140,
     alignItems: "center",
     justifyContent: "center",
     borderRadius: 50,
   },
   buttonText2: {
-    color: "#000",
+    color: "#0077b6",
     fontSize: 16,
     fontWeight: "bold",
   },
   etape: {
     marginBottom: 10,
+  },
+  attachmentContainer: {
+    position: "relative",
   },
   etapeTitle: {
     fontSize: 16,
@@ -254,6 +370,6 @@ const styles = StyleSheet.create({
   },
   etapeDescription: {
     fontSize: 14,
-    color: "#555",
-  },
+    color: "#0077b6",
+  }
 });

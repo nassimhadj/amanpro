@@ -90,6 +90,7 @@ export default function chantsannul({ navigation }) {
           <TextInput
             style={styles.input}
             placeholder="Rechercher..."
+            placeholderTextColor="#0077b6"
             value={searchQuery}
             onChangeText={setSearchQuery}
           />
@@ -134,7 +135,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     alignItems: "flex-start",
-    backgroundColor: "#f5f5f5",
+    backgroundColor: "#fff",
     paddingHorizontal: 20,
   },
   column: {
@@ -143,7 +144,7 @@ const styles = StyleSheet.create({
     flexDirection: "column",
     borderRadius: 40,
     marginBottom: 20,
-    borderColor: "#000000",
+    borderColor: "#0077b6",
     borderWidth: 3,
   },
   vbutton: {
@@ -154,13 +155,13 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     marginBottom: 10,
     marginLeft: 15,
-    color: "#333",
+    color: "#0077b6",
   },
   barrech: {
     flexDirection: "row",
     alignItems: "center",
     width: "100%",
-    borderColor: "#000000",
+    borderColor: "#0077b6",
     borderWidth: 3,
     borderRadius: 200,
     marginTop: 10,
@@ -174,14 +175,14 @@ const styles = StyleSheet.create({
   },
   noResultsText: {
     fontSize: 16,
-    color: '#666',
+    color: '#0077b6',
     textAlign: 'center',
   } ,
 
   mintext: {
     marginLeft: 10,
     fontSize: 18,
-    color: "#555",
+    color: "#0077b6",
   },
   image: {
     width: 21,
@@ -192,7 +193,7 @@ const styles = StyleSheet.create({
   button: {
     backgroundColor: "#ffffff",
     borderWidth: 3,
-    borderColor: "#000000",
+    borderColor: "#0077b6",
     height: 35,
     width: 120,
     marginRight: 20,
@@ -203,7 +204,7 @@ const styles = StyleSheet.create({
     borderRadius: 50,
   },
   buttonText: {
-    color: "#000000",
+    color: "#0077b6",
     fontSize: 12,
     fontWeight: "bold",
   },

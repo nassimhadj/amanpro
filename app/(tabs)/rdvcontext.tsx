@@ -1,5 +1,5 @@
 import React, { createContext, useState, useEffect } from 'react';
-import { API_URL } from '@/config/api.config';
+import { API_URL } from '../../config/api.config';
 
 export const RdvContext = createContext();
 

@@ -25,7 +25,31 @@ import chantacc from './chantacc';
 import chantsav from './chantsav';
 import chantfac from './chantfac';
 import chantpay from './chantpay';
-import { Image, StyleSheet } from 'react-native';
+import { Image, StyleSheet, View, TouchableOpacity } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+
+// Add this custom header component with hamburger menu
+const CustomHeader = () => {
+  const navigation = useNavigation();
+  
+  return (
+    <View style={{
+      height: 60,
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: 15,
+      backgroundColor: '#fff'
+    }}>
+      <TouchableOpacity onPress={() => navigation.openDrawer()}>
+        <View>
+          <View style={{ height: 3, width: 30, backgroundColor: '#0077b6', marginBottom: 6 , borderRadius:50}} />
+          <View style={{ height: 3, width: 30, backgroundColor: '#0077b6', marginBottom: 6 ,borderRadius:50 }} />
+          <View style={{ height: 3, width: 30, backgroundColor: '#0077b6' , marginBottom: 6 , borderRadius:50 }} />
+        </View>
+      </TouchableOpacity>
+    </View>
+  );
+};
 
 const Drawer = createDrawerNavigator();
 const Stack = createStackNavigator();
@@ -36,7 +60,9 @@ const RDVStack = () => (
     <Stack.Screen
       name="RDV"
       component={RDVScreen}
-      options={{ headerShown: false }}
+      options={{ 
+        header: () => <CustomHeader />
+      }}
     />
     <Stack.Screen
       name="ajoutrdv"
@@ -52,8 +78,10 @@ const chantmsgstack = () => (
     <Stack.Screen
       name="chantmsg"
       component={chantmsg}
-      options={{ headerShown: false ,
-         unmountOnBlur: true}}
+      options={{ 
+        header: () => <CustomHeader />,
+        unmountOnBlur: true
+      }}
     />
     <Stack.Screen
       name="chantprop"
@@ -70,7 +98,10 @@ const creerchantstack = ()=>(
      <Stack.Screen
     name="chants"
     component={chants}
-    options={{ headerShown: false , unmountOnBlur: true }}
+    options={{ 
+      header: () => <CustomHeader />,
+      unmountOnBlur: true
+    }}
   />
   <Stack.Screen
     name="chantsacc"
@@ -137,11 +168,7 @@ const creerchantstack = ()=>(
       component={chantierter}
       options={{ headerShown:false}}
     />
-  <Stack.Screen
-    name="creerchantier"
-    component={creerchant}
-    options={{ title: 'Ajouter un chantier' }}
-  />
+  
     <Stack.Screen
     name="chantier"
     component={Chantier}
@@ -164,7 +191,7 @@ const DrawerNavigator = () => {
       screenOptions={{
         headerShown: false,
         drawerStyle: {
-          backgroundColor: '#000',
+          backgroundColor: '#0077b6',
           width: 240,
         },
         drawerLabelStyle: {
@@ -176,7 +203,7 @@ const DrawerNavigator = () => {
     >
       <Drawer.Screen
         name="RDVStack"
-        component={RDVStack} // Use the stack for RDV
+        component={RDVStack}
         options={{
           drawerLabel: 'Mes RDVs',
           drawerIcon: () => (
@@ -201,6 +228,7 @@ const DrawerNavigator = () => {
           ),
         }}
       />
+       
       <Drawer.Screen
         name="chantiers"
         component={creerchantstack}
@@ -211,6 +239,21 @@ const DrawerNavigator = () => {
               source={require('../../assets/images/building.png')}
               style={styles.icon}
             />
+            
+          ),
+        }}
+      />
+      <Drawer.Screen
+        name="creerchant"
+        component={creerchant}
+        options={{
+          drawerLabel: 'ajouter un chantier',
+          drawerIcon: () => (
+            <Image
+              source={require('../../assets/images/plus.png')}
+              style={styles.icon}
+            />
+            
           ),
         }}
       />

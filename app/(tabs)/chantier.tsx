@@ -14,7 +14,7 @@ import {
 } from "react-native";
 import { useChantierTer } from "./chantiertercontext";
 import { useChantier } from "./chantiercontext";
-import { API_URL } from "@/config/api.config";
+import { API_URL } from "../../config/api.config";
 
 export default function Chantier({ route, navigation }) {
   const { chantier } = route.params || {};
@@ -276,21 +276,24 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "bold",
     marginBottom: 10,
+    color:"#0077b6"
   },
   text: {
     fontSize: 16,
     marginBottom: 5,
+    color:"#0077b6"
   },
   sectionTitle: {
     fontSize: 16,
     fontWeight: "bold",
     marginTop: 10,
     marginBottom: 5,
+    color:"#0077b6"
   },
   description: {
     marginBottom: 15,
     fontSize: 14,
-    color: "#555",
+    color: "#0077b6",
   },
   imageRow: {
     flexDirection: "row",
@@ -342,7 +345,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
   },
   button: {
-    backgroundColor: "#000000",
+    backgroundColor: "#0077b6",
     height: 40,
     width: 140,
     alignItems: "center",
@@ -356,7 +359,7 @@ const styles = StyleSheet.create({
   },
   button2: {
     backgroundColor: "#FFFFFF",
-    borderColor: "#000",
+    borderColor: "#0077b6",
     borderWidth: 2,
     height: 40,
     width: 125,
@@ -365,7 +368,7 @@ const styles = StyleSheet.create({
     borderRadius: 50,
   },
   buttonText2: {
-    color: "#000",
+    color: "#0077b6",
     fontSize: 16,
     fontWeight: "bold",
   },
@@ -378,6 +381,6 @@ const styles = StyleSheet.create({
   },
   etapeDescription: {
     fontSize: 14,
-    color: "#555",
+    color: "#0077b6",
   }
 });

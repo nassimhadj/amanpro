@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, TextInput, Alert, Image } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { API_URL } from '@/config/api.config';
+import { API_URL } from '../../config/api.config';
 import { useNavigation } from '@react-navigation/native';
 import AddressAutocomplete from './adrresseauto';
 
@@ -110,7 +110,7 @@ export default function Ajoutrdv() {
           <TextInput
             style={styles.input}
             placeholder="Entrez le nom"
-            placeholderTextColor="#888"
+            placeholderTextColor="#0077b6"
             value={name}
             onChangeText={setName}
           />
@@ -122,7 +122,7 @@ export default function Ajoutrdv() {
           <TextInput
             style={styles.input}
             placeholder="Entrez le numéro"
-            placeholderTextColor="#888"
+            placeholderTextColor="#0077b6"
             keyboardType="phone-pad"
             maxLength={11}
             value={phone}
@@ -167,7 +167,7 @@ export default function Ajoutrdv() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f5f5f5",
+    backgroundColor: "#fff",
     paddingHorizontal: 20,
   },
   column: {
@@ -187,7 +187,7 @@ const styles = StyleSheet.create({
     marginTop: 40,
     marginBottom: 40,
     textAlign: 'center',
-    color: "#333",
+    color: "#0077b6",
   },
   image: {
     width: 43,
@@ -204,12 +204,12 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 40,
     borderBottomWidth: 1,
-    borderBottomColor: '#ccc',
+    borderBottomColor: '#0077b6',
     fontSize: 16,
-    color: '#333',
+    color: '#0077b6',
   },
   button: {
-    backgroundColor: "#000000",
+    backgroundColor: "#0077b6",
     height: 40,
     width: 115,
     alignItems: 'center',

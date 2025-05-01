@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Platform, ScrollView, RefreshControl } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Image, View, Text, StyleSheet, TouchableOpacity } from "react-native";
-import { API_URL } from "@/config/api.config";
+import { API_URL } from "../../config/api.config";
 
 interface Appointment {
   id: string;
@@ -124,7 +124,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     alignItems: 'flex-start',
-    backgroundColor: "#f5f5f5",
+    backgroundColor: "#fff",
     paddingHorizontal: 20,
   },
   column: {
@@ -133,10 +133,21 @@ const styles = StyleSheet.create({
     flexDirection: 'column',
     borderRadius: 40,
     marginBottom: 20,
-    borderColor: '#000000',
+    borderColor: '#0077b6',
     borderWidth: 3,
     gap: 20,
-  },
+
+    backgroundColor: '#fff', // Ensures the inside is white, not transparent
+
+    // Shadow for outside only
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.2,
+    shadowRadius: 10,
+    elevation: 8, // Only works on Android
+    overflow: 'hidden', // Prevents inner shadow leaks (iOS)
+},
+
   vbutton: {
     alignItems: 'center',
   },
@@ -144,7 +155,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "bold",
     marginLeft: 15,
-    color: "#333",
+    color:"#0077b6",
   },
   image: {
     width: 21,
@@ -153,7 +164,7 @@ const styles = StyleSheet.create({
   },
   mintext: {
     fontSize: 18,
-    color: "#555",
+    color: "#0077b6",
   },
   row: {
     flexDirection: 'row',
@@ -162,7 +173,7 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   button: {
-    backgroundColor: "#000000",
+    backgroundColor: "#0077b6",
     height: 40,
     width: 160,
     alignItems: 'center',

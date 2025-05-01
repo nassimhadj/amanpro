@@ -23,6 +23,7 @@ export default function ModChant({ route, navigation }) {
   const [isImageLoading, setIsImageLoading] = useState(false); 
   const [newEtape, setNewEtape] = useState({ title: "", descriptif: "" });
   const { chantiers, setChantiers } = useChantier();
+  const [isSubmitting, setIsSubmitting] = useState(false);
  
   useEffect(() => {
     if (route?.params?.chantier) {
@@ -103,6 +104,7 @@ export default function ModChant({ route, navigation }) {
       return;
     }
   
+    setIsSubmitting(true);
     try {
       const formData = new FormData();
       
@@ -186,6 +188,8 @@ export default function ModChant({ route, navigation }) {
     } catch (error) {
       console.error('Failed to apply changes:', error);
       alert('Error: ' + error.message);
+    } finally {
+      setIsSubmitting(false);
     }
   };
   
@@ -206,36 +210,41 @@ export default function ModChant({ route, navigation }) {
           {/* Champs de saisie */}
           <TextInput
             style={styles.input}
-            placeholder="Title"
+            placeholder="Titre"
+            placeholderTextColor="#0077b6"
             value={rdv?.title}
             onChangeText={(text) => setRdv({ ...rdv, title: text })}
           />
           <TextInput
             style={styles.input}
             placeholder="Email"
+            placeholderTextColor="#0077b6"
             value={rdv?.email}
             onChangeText={(text) => setRdv({ ...rdv, email: text })}
           />
           <TextInput
             style={styles.input}
-            placeholder="Name"
+            placeholder="Nom"
+            placeholderTextColor="#0077b6"
             value={rdv?.name}
             onChangeText={(text) => setRdv({ ...rdv, name: text })}
           />
           <TextInput
             style={styles.input}
-            placeholder="Phone"
+            placeholder="Téléphone"
+            placeholderTextColor="#0077b6"
             value={rdv?.phone}
             onChangeText={(text) => setRdv({ ...rdv, phone: text })}
           />
           <AddressAutocomplete
-  value={rdv.address}
-  onSelectAddress={(address) => setRdv({ ...rdv, address })}
-  
-/>
+            value={rdv.address}
+            onSelectAddress={(address) => setRdv({ ...rdv, address })}
+          />
+          <Text style={styles.sectionTitle}>Description :</Text>
           <TextInput
             style={[styles.input, { height: 100 }]}
-            placeholder="Description"
+            placeholder="entrez la Description"
+            placeholderTextColor="#0077b6"
             multiline
             value={rdv?.description}
             onChangeText={(text) => setRdv({ ...rdv, description: text })}
@@ -246,36 +255,40 @@ export default function ModChant({ route, navigation }) {
               <View style={styles.Row}>
                 <TextInput
                   style={styles.input}
-                  placeholder="Title"
+                  placeholder="Titre de l'étape"
+                  placeholderTextColor="#0077b6"
                   value={etape?.title}
                   onChangeText={(text) => modifyEtape(index, "title", text)}
                 />
                 <TouchableOpacity onPress={() => deleteEtape(index)}>
                   <Image
                     source={require('../../assets/images/Vector.png')}
-                    style={styles.image}
+                    style={styles.deleteIconImage}
                   />
                 </TouchableOpacity>
               </View>
               <TextInput
                 style={[styles.input, { height: 60 }]}
-                placeholder="Description"
+                placeholder="Description de l'étape"
+                placeholderTextColor="#0077b6"
                 multiline
                 value={etape?.descriptif}
                 onChangeText={(text) => modifyEtape(index, "descriptif", text)}
               />
             </View>
           ))}
-          <Text style={styles.sectionTitle}>Add Étape:</Text>
+          
           <TextInput
             style={styles.input}
-            placeholder="Title"
+            placeholder="Titre de l'étape"
+            placeholderTextColor="#0077b6"
             value={newEtape?.title}
             onChangeText={(text) => setNewEtape({ ...newEtape, title: text })}
           />
           <TextInput
             style={[styles.input, { height: 60 }]}
-            placeholder="Description"
+            placeholder="Description de l'étape"
+            placeholderTextColor="#0077b6"
             multiline
             value={newEtape?.descriptif}
             onChangeText={(text) =>
@@ -283,56 +296,60 @@ export default function ModChant({ route, navigation }) {
             }
           />
           <TouchableOpacity onPress={addEtape} style={styles.button2}>
-            <Text style={styles.buttonText2}>Add Étape</Text>
+            <Text style={styles.buttonText2}>Ajouter l'étape</Text>
           </TouchableOpacity>
 
           {/* Section des pièces jointes */}
           <Text style={styles.sectionTitle}>Pièces jointes:</Text>
           <TouchableOpacity onPress={addImage} style={styles.button2}>
-            <Text style={styles.buttonText2}>Add Image</Text>
+            <Text style={styles.buttonText2}>Ajouter image</Text>
           </TouchableOpacity>
           <View style={styles.imageRow}>
-  {rdv?.attachments?.map((attachment, index) => {
-    const imageUri = attachment.uri 
-      ? attachment.uri  // For new images
-      : `${API_URL}/rdv/uploads/${attachment.filename}`; // For server images
-    
-    console.log('Trying to load image from:', imageUri);
-
-    return (
-      <View key={index} style={styles.attachmentContainer}>
-        <TouchableOpacity onPress={() => openImage(imageUri)}>
-          <Image 
-            source={{ uri: imageUri }}
-            style={styles.attachmentImage}
-            onError={(e) => console.log('Image error:', e.nativeEvent.error)}
-          />
-        </TouchableOpacity>
-        <TouchableOpacity
-          onPress={() => deleteAttachment(index)}
-          style={styles.deleteButtonIcon}
-        >
-          <Image
-            source={require('../../assets/images/Vector.png')}
-            style={styles.deleteIconImage}
-          />
-        </TouchableOpacity>
-      </View>
-    );
-  })}
-</View>
-  
- 
+            {rdv?.attachments?.map((attachment, index) => {
+              const imageUri = attachment.uri 
+                ? attachment.uri  // For new images
+                : `${API_URL}/rdv/uploads/${attachment.filename}`; // For server images
+              
+              return (
+                <View key={index} style={styles.attachmentContainer}>
+                  <TouchableOpacity onPress={() => openImage(imageUri)}>
+                    <Image 
+                      source={{ uri: imageUri }}
+                      style={styles.attachmentImage}
+                      onError={(e) => console.log('Image error:', e.nativeEvent.error)}
+                    />
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={() => deleteAttachment(index)}
+                    style={styles.deleteButtonIcon}
+                  >
+                    <Image
+                      source={require('../../assets/images/Vector.png')}
+                      style={styles.deleteIconImage}
+                    />
+                  </TouchableOpacity>
+                </View>
+              );
+            })}
+          </View>
         </View>
       </ScrollView>
 
       {/* Boutons Annuler et Appliquer */}
       <View style={styles.buttonsContainer}>
         <TouchableOpacity onPress={handleCancel} style={styles.button}>
-          <Text style={styles.buttonText}>annuler</Text>
+          <Text style={styles.buttonText}>Annuler</Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={handleApply} style={styles.button}>
-          <Text style={styles.buttonText}>Appliquer</Text>
+        <TouchableOpacity 
+          onPress={handleApply} 
+          style={[styles.button, isSubmitting && styles.buttonDisabled]} 
+          disabled={isSubmitting}
+        >
+          {isSubmitting ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text style={styles.buttonText}>Appliquer</Text>
+          )}
         </TouchableOpacity>
       </View>
 
@@ -354,13 +371,13 @@ export default function ModChant({ route, navigation }) {
 
             {/* Indicateur de chargement pendant le chargement de l'image */}
             {isImageLoading && (
-              <ActivityIndicator size="large" color="#000" style={styles.loader} />
+              <ActivityIndicator size="large" color="#fff" style={styles.loader} />
             )}
 
             <Image
               source={{ uri: selectedImage }}
               style={styles.fullImage}
-              onLoadEnd={() => setIsImageLoading(false)} // Cache le loader une fois l'image chargée
+              onLoadEnd={() => setIsImageLoading(false)}
             />
           </View>
         </Modal>
@@ -385,8 +402,9 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 16,
     fontWeight: "bold",
-    marginTop: 10,
-    marginBottom: 5,
+    color: "#0077b6",
+    marginTop: 20,
+    marginBottom: 15,
   },
   imageRow: {
     flexDirection: "row",
@@ -428,16 +446,17 @@ const styles = StyleSheet.create({
   },
   button2: {
     backgroundColor: "#FFFFFF",
-    borderColor: "#000",
+    borderColor: "#0077b6",
     borderWidth: 2,
     height: 40,
     width: 125,
     alignItems: "center",
     justifyContent: "center",
     borderRadius: 50,
+    marginBottom: 30,
   },
   buttonText2: {
-    color: "#000",
+    color: "#0077b6",
     fontSize: 16,
     fontWeight: "bold",
   },
@@ -445,52 +464,49 @@ const styles = StyleSheet.create({
     position: "relative",
   },
   input: {
-    width: "90%",
-    borderWidth: 1,
-    borderColor: "#ccc",
-    padding: 10,
-    borderRadius: 5,
-    marginBottom: 10,
+    flex: 1,
+    height: 40,
+    borderBottomWidth: 1,
+    borderBottomColor: '#0077b6',
+    fontSize: 16,
+    marginBottom: 30,
+    color: '#0077b6',
   },
   etape: {
     marginBottom: 10,
   },
   Row: {
     flexDirection: "row",
-    gap: 10,
-  },
-  image: {
-    width: 33,
-    height: 40,
-    marginRight: 15,
-  },
-  deleteButtonIcon: {
-    position: "absolute",
-    top: -5,
-    right: -5,
-    borderRadius: 15,
-    padding: 5,
-  },
-  deleteIconImage: {
-    width: 20,
-    height: 20,
+    justifyContent: "space-between",
   },
   buttonsContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
-    padding: 20,
+    padding: 10,
   },
   button: {
-    backgroundColor: "#000",
-    height: 40,
-    width: 125,
+    backgroundColor: "#0077b6",
+    paddingVertical: 15,
+    width: "45%",
     alignItems: "center",
-    justifyContent: "center",
-    borderRadius: 50,
+    borderRadius: 5,
   },
   buttonText: {
     color: "#fff",
     fontSize: 16,
     fontWeight: "bold",
   },
+  deleteButtonIcon: {
+    position: "absolute",
+    top: 0,
+    right: 0,
+  },
+  deleteIconImage: {
+    width: 20,
+    height: 20,
+  },
+  buttonDisabled: {
+    backgroundColor: '#666',
+    opacity: 0.7
+  }
 });
